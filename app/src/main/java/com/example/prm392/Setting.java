@@ -1,61 +1,55 @@
 package com.example.prm392;
 
 import android.os.Bundle;
-import android.view.MenuItem;
-import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDelegate;
+import com.google.android.material.materialswitch.MaterialSwitch; // import for the switch
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.google.android.material.navigation.NavigationView;
 
 public class Setting extends AppCompatActivity {
-
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private ActionBarDrawerToggle toggle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
 
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.navigation_view);
+        // Setup toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar, R.string.open, R.string.close);
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // 🌗 DARK THEME TOGGLE
+        MaterialSwitch themeSwitch = findViewById(R.id.Theme);
 
-        navigationView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                Toast.makeText(this, "Home", Toast.LENGTH_SHORT).show();
-            } else if (id == R.id.nav_settings) {
-                Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
-            } else if (id == R.id.nav_global) {
-                Toast.makeText(this, "Global Tool", Toast.LENGTH_SHORT).show();
-            } else if (id == R.id.nav_about) {
-                Toast.makeText(this, "About", Toast.LENGTH_SHORT).show();
-            }
-            drawerLayout.closeDrawers();
-            return true;
+        // Load previous state
+        boolean isDark = getSharedPreferences("settings", MODE_PRIVATE)
+                .getBoolean("dark_mode", false);
+
+        themeSwitch.setChecked(isDark);
+        AppCompatDelegate.setDefaultNightMode(isDark ?
+                AppCompatDelegate.MODE_NIGHT_YES :
+                AppCompatDelegate.MODE_NIGHT_NO);
+
+        themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // Save preference
+            getSharedPreferences("settings", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("dark_mode", isChecked)
+                    .apply();
+
+            // Apply theme instantly
+            AppCompatDelegate.setDefaultNightMode(isChecked ?
+                    AppCompatDelegate.MODE_NIGHT_YES :
+                    AppCompatDelegate.MODE_NIGHT_NO);
         });
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (toggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }
