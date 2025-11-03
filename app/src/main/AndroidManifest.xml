@@ -11,18 +11,23 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
+
+        <!-- ✅ Màn hình mở đầu -->
         <activity
-            android:name=".register"
-            android:exported="false" />
-        <activity
-            android:name=".MainActivity"
+            android:name=".ListProjectsActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Các màn hình khác -->
+        <activity android:name=".ListMembersActivity" android:exported="false" />
+        <activity android:name=".CreateProjectActivity" android:exported="false" />
+        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".register" android:exported="false" />
+
     </application>
 
 </manifest>
