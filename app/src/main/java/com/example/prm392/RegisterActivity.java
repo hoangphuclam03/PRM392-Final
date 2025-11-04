@@ -7,8 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,13 +19,13 @@ public class RegisterActivity extends AppCompatActivity {
     private CheckBox cbAgree;
     private TextView tvGoToLogin;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        // Ánh xạ view
         edtFirstName = findViewById(R.id.edtFirstName);
         edtLastName = findViewById(R.id.edtLastName);
         edtEmailRegister = findViewById(R.id.edtEmailRegister);
@@ -37,6 +36,7 @@ public class RegisterActivity extends AppCompatActivity {
         tvGoToLogin = findViewById(R.id.tvGoToLogin);
 
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         btnCreateAccount.setOnClickListener(v -> createAccount());
         tvGoToLogin.setOnClickListener(v -> {
@@ -46,29 +46,26 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void createAccount() {
+        String firstName = edtFirstName.getText().toString().trim();
+        String lastName = edtLastName.getText().toString().trim();
         String email = edtEmailRegister.getText().toString().trim();
         String password = edtPasswordRegister.getText().toString().trim();
         String confirm = edtConfirmPassword.getText().toString().trim();
-        String firstName = edtFirstName.getText().toString().trim();
-        String lastName = edtLastName.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty() || confirm.isEmpty() ||
-                firstName.isEmpty() || lastName.isEmpty()) {
+        if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() ||
+                password.isEmpty() || confirm.isEmpty()) {
             Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (!password.equals(confirm)) {
             Toast.makeText(this, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (!cbAgree.isChecked()) {
             Toast.makeText(this, "Vui lòng đồng ý với điều khoản", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Bắt đầu tạo tài khoản
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -76,42 +73,27 @@ public class RegisterActivity extends AppCompatActivity {
                         if (user != null) {
                             user.sendEmailVerification();
 
-                            try {
-                                // 🔹 Lưu dữ liệu vào Realtime Database
-                                String uid = user.getUid();
-                                DatabaseReference ref = FirebaseDatabase.getInstance()
-                                        .getReference("Users")
-                                        .child(uid);
+                            Map<String, Object> userData = new HashMap<>();
+                            userData.put("uid", user.getUid());
+                            userData.put("firstName", firstName);
+                            userData.put("lastName", lastName);
+                            userData.put("email", email);
+                            userData.put("createdAt", System.currentTimeMillis());
 
-                                Map<String, Object> userData = new HashMap<>();
-                                userData.put("uid", uid);
-                                userData.put("firstName", firstName);
-                                userData.put("lastName", lastName);
-                                userData.put("email", email);
-                                userData.put("createdAt", System.currentTimeMillis());
+                            db.collection("Users").document(user.getUid())
+                                    .set(userData)
+                                    .addOnSuccessListener(aVoid ->
+                                            Toast.makeText(this, "Đăng ký thành công! Vui lòng xác minh email.", Toast.LENGTH_LONG).show()
+                                    )
+                                    .addOnFailureListener(e ->
+                                            Toast.makeText(this, "Lưu Firestore thất bại: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                    );
 
-                                ref.setValue(userData);
-                            } catch (Exception e) {
-                                Toast.makeText(this,
-                                        "Lưu dữ liệu tạm thời thất bại: " + e.getMessage(),
-                                        Toast.LENGTH_SHORT).show();
-                            }
-
-                            // ✅ Hiển thị thông báo & quay lại Login
-                            Toast.makeText(this,
-                                    "🎉 Đăng ký thành công! Vui lòng xác minh email.",
-                                    Toast.LENGTH_LONG).show();
-
-                            Intent intent = new Intent(this, MainActivity.class);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(intent);
+                            startActivity(new Intent(this, MainActivity.class));
                             finish();
                         }
-
                     } else {
-                        Toast.makeText(this,
-                                "Lỗi đăng ký: " + task.getException().getMessage(),
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Lỗi đăng ký: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }

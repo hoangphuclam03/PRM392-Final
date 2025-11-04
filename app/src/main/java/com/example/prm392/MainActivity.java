@@ -5,39 +5,43 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText edtEmail, edtPassword;
     private Button btnLogin, btnRegister;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Ánh xạ view
         edtEmail = findViewById(R.id.edtEmail);
         edtPassword = findViewById(R.id.edtPassword);
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
 
-        // Khởi tạo Firebase
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
-        // Nút đăng ký → sang màn Register
         btnRegister.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
-            startActivity(intent);
-            finish(); // tránh chồng activity khi quay lại
+            startActivity(new Intent(MainActivity.this, RegisterActivity.class));
+            finish();
         });
 
-        // Nút đăng nhập
         btnLogin.setOnClickListener(v -> loginUser());
     }
 
@@ -50,24 +54,31 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // Gọi Firebase để đăng nhập
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
-                            // ✅ Kiểm tra email đã xác minh chưa
                             if (user.isEmailVerified()) {
                                 Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
 
-                                // 👉 Điều hướng sang HomeActivity
+                                // 🔥 Ghi thời gian đăng nhập vào Firestore (tự tạo nếu chưa có)
+                                Map<String, Object> update = new HashMap<>();
+                                update.put("lastLogin", System.currentTimeMillis());
+
+                                DocumentReference ref = db.collection("Users").document(user.getUid());
+                                ref.set(update, SetOptions.merge())
+                                        .addOnFailureListener(e ->
+                                                Toast.makeText(this, "Không thể cập nhật Firestore: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                                        );
+
                                 Intent intent = new Intent(MainActivity.this, HomeActivity.class);
                                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                                 startActivity(intent);
                                 finish();
                             } else {
                                 Toast.makeText(this, "Vui lòng xác minh email trước khi đăng nhập", Toast.LENGTH_LONG).show();
-                                mAuth.signOut(); // đăng xuất để tránh lỗi trạng thái user treo
+                                mAuth.signOut();
                             }
                         }
                     } else {
@@ -76,15 +87,12 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    // 🔁 Tự động đăng nhập lại nếu user đã xác minh email
     @Override
     protected void onStart() {
         super.onStart();
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null && user.isEmailVerified()) {
-            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, HomeActivity.class));
             finish();
         }
     }
