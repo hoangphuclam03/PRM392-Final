@@ -11,18 +11,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
+
+        <!-- ✅ Màn hình chính sau khi login -->
         <activity
-            android:name=".register"
+            android:name=".HomeActivity"
+            android:exported="true" />
+
+        <!-- Màn hình đăng ký -->
+        <activity
+            android:name=".RegisterActivity"
             android:exported="false" />
+
+        <!-- Màn hình đăng nhập -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
