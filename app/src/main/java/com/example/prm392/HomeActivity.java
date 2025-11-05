@@ -7,6 +7,7 @@ import androidx.appcompat.widget.Toolbar;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,12 +16,15 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import data.local.DBConnect;
+import data.repository.SyncRepository;
+import models.Projects;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -39,7 +43,27 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        // Ánh xạ View
+        // 🔹 Initialize Firebase + SQLite
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        DBConnect localDb = new DBConnect(this);
+
+        // 🔹 Optional: insert a test project locally BEFORE syncing
+        Projects localTest = new Projects();
+        localTest.setProjectId(1001);
+        localTest.setProjectName("Offline Project Test");
+        localTest.setDescription("Created locally on device");
+        localTest.setCreatedBy(1);
+        localTest.setCreatedAt("2025-11-05");
+        localDb.insertOrUpdateProject(localTest);
+        Log.d("HOME", "Inserted local test project for sync verification");
+
+        // 🔹 Run sync tests (SQLite → Firebase → SQLite)
+        SyncRepository syncRepo = new SyncRepository(this);
+        syncRepo.syncProjectsToFirebase();     // Upload local → Firebase
+        syncRepo.syncProjectsFromFirebase();   // Download Firebase → local
+
+        // 🔹 Map UI
         tvWelcome = findViewById(R.id.tvWelcome);
         btnLogout = findViewById(R.id.btnLogout);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -52,14 +76,10 @@ public class HomeActivity extends AppCompatActivity {
                 this, drawerLayout, toolbar,
                 R.string.navigation_drawer_open,
                 R.string.navigation_drawer_close);
-
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // Khởi tạo Firebase
-        mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-
+        // 🔹 Check logged-in user
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             loadUserInfo(user.getUid());
@@ -70,10 +90,10 @@ public class HomeActivity extends AppCompatActivity {
             finish();
         }
 
-        // Đăng xuất
+        // 🔹 Logout button
         btnLogout.setOnClickListener(v -> logoutUser());
 
-        // Navigation menu
+        // 🔹 Navigation menu logic
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
@@ -90,7 +110,7 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    // 🔹 Lấy thông tin người dùng từ Firestore
+    // 🔹 Load user info from Firestore
     private void loadUserInfo(String uid) {
         DocumentReference ref = db.collection("Users").document(uid);
         ref.get().addOnSuccessListener(document -> {
@@ -114,7 +134,7 @@ public class HomeActivity extends AppCompatActivity {
         );
     }
 
-    // 🔹 Cập nhật thời gian đăng nhập
+    // 🔹 Update last login timestamp
     private void updateLastLogin(String uid) {
         Map<String, Object> update = new HashMap<>();
         update.put("lastLogin", System.currentTimeMillis());

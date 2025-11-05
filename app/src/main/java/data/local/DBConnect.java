@@ -1,28 +1,36 @@
-package utils;
+package data.local;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import models.Users;
+import java.util.ArrayList;
+import java.util.List;
 
+import models.Users;
+import models.Projects;
+
+/**
+ * Local SQLite database for offline caching + sync with Firebase.
+ */
 public class DBConnect extends SQLiteOpenHelper {
 
-    // Tên database, bảng và version
+    // Database info
     private static final String dbName = "PRM392.db";
-    private static final String dbTable = "users";
-    // 🔺 Tăng version lên để SQLite gọi lại onUpgrade() và tạo bảng mới
     private static final int dbVersion = 2;
 
-    // Các cột trong bảng users
-    private static final String id = "id";
-    private static final String firstName = "firstName";
-    private static final String lastName = "lastName";
-    private static final String email = "email";
-    private static final String password = "password";
+    // USERS table
+    private static final String USERS_TABLE = "users";
+    private static final String COL_ID = "id";
+    private static final String COL_FIRST_NAME = "firstName";
+    private static final String COL_LAST_NAME = "lastName";
+    private static final String COL_EMAIL = "email";
+    private static final String COL_PASSWORD = "password";
 
     public DBConnect(@Nullable Context context) {
         super(context, dbName, null, dbVersion);
@@ -30,17 +38,17 @@ public class DBConnect extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // 1️⃣ Bảng USERS (giữ nguyên)
-        String query = "CREATE TABLE " + dbTable + " (" +
-                id + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                firstName + " TEXT NOT NULL, " +
-                lastName + " TEXT NOT NULL, " +
-                email + " TEXT UNIQUE NOT NULL, " +
-                password + " TEXT NOT NULL" +
+        // USERS
+        String usersQuery = "CREATE TABLE " + USERS_TABLE + " (" +
+                COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COL_FIRST_NAME + " TEXT NOT NULL, " +
+                COL_LAST_NAME + " TEXT NOT NULL, " +
+                COL_EMAIL + " TEXT UNIQUE NOT NULL, " +
+                COL_PASSWORD + " TEXT NOT NULL" +
                 ");";
-        db.execSQL(query);
+        db.execSQL(usersQuery);
 
-        // 2️⃣ Bảng PROJECTS
+        // PROJECTS
         db.execSQL("CREATE TABLE projects (" +
                 "project_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "project_name TEXT NOT NULL, " +
@@ -50,7 +58,7 @@ public class DBConnect extends SQLiteOpenHelper {
                 "FOREIGN KEY (created_by) REFERENCES users(id)" +
                 ");");
 
-        // 3️⃣ Bảng PROJECT_MEMBERS
+        // PROJECT_MEMBERS
         db.execSQL("CREATE TABLE project_members (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "project_id INTEGER, " +
@@ -60,7 +68,7 @@ public class DBConnect extends SQLiteOpenHelper {
                 "FOREIGN KEY (user_id) REFERENCES users(id)" +
                 ");");
 
-        // 4️⃣ Bảng TASKS
+        // TASKS
         db.execSQL("CREATE TABLE tasks (" +
                 "task_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "project_id INTEGER, " +
@@ -73,7 +81,7 @@ public class DBConnect extends SQLiteOpenHelper {
                 "FOREIGN KEY (created_by) REFERENCES users(id)" +
                 ");");
 
-        // 5️⃣ Bảng TASK_ASSIGNEES
+        // TASK_ASSIGNEES
         db.execSQL("CREATE TABLE task_assignees (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "task_id INTEGER, " +
@@ -82,7 +90,7 @@ public class DBConnect extends SQLiteOpenHelper {
                 "FOREIGN KEY (user_id) REFERENCES users(id)" +
                 ");");
 
-        // 6️⃣ Bảng MESSAGES (chat)
+        // MESSAGES
         db.execSQL("CREATE TABLE messages (" +
                 "message_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "project_id INTEGER, " +
@@ -93,7 +101,7 @@ public class DBConnect extends SQLiteOpenHelper {
                 "FOREIGN KEY (sender_id) REFERENCES users(id)" +
                 ");");
 
-        // 7️⃣ Bảng NOTIFICATIONS
+        // NOTIFICATIONS
         db.execSQL("CREATE TABLE notifications (" +
                 "notification_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "user_id INTEGER, " +
@@ -103,7 +111,7 @@ public class DBConnect extends SQLiteOpenHelper {
                 "FOREIGN KEY (user_id) REFERENCES users(id)" +
                 ");");
 
-        // 8️⃣ Bảng CALENDAR_EVENTS (optional)
+        // CALENDAR_EVENTS
         db.execSQL("CREATE TABLE calendar_events (" +
                 "event_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "task_id INTEGER, " +
@@ -114,7 +122,6 @@ public class DBConnect extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
         if (oldVersion < 2) {
             db.execSQL("CREATE TABLE IF NOT EXISTS projects (" +
                     "project_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -182,14 +189,55 @@ public class DBConnect extends SQLiteOpenHelper {
         }
     }
 
-    // ⚙️ Hàm thêm user (giữ nguyên code cũ)
+    // ⚙️ Local add user
     public void addUser(Users user) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(firstName, user.getFirstName());
-        values.put(lastName, user.getLastName());
-        values.put(email, user.getEmail());
-        values.put(password, user.getPassword());
-        db.insert(dbTable, null, values);
+        values.put(COL_FIRST_NAME, user.getFirstName());
+        values.put(COL_LAST_NAME, user.getLastName());
+        values.put(COL_EMAIL, user.getEmail());
+        values.put(COL_PASSWORD, user.getPassword());
+        db.insert(USERS_TABLE, null, values);
+    }
+
+    // 🔄 Sync helpers (for Firebase integration)
+    public void insertOrUpdateProject(Projects project) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        // Fill defaults if null
+        String projectName = project.getProjectName() != null ? project.getProjectName() : "Unnamed Project";
+        String description = project.getDescription() != null ? project.getDescription() : "";
+        String createdAt = project.getCreatedAt() != null ? project.getCreatedAt() : "";
+        int createdBy = project.getCreatedBy(); // optional: 0 if you want a default
+
+        values.put("project_id", project.getProjectId());
+        values.put("project_name", projectName);
+        values.put("description", description);
+        values.put("created_by", createdBy);
+        values.put("created_at", createdAt);
+
+        db.insertWithOnConflict("projects", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+
+
+    public List<Projects> getAllProjects() {
+        List<Projects> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM projects", null);
+        if (cursor.moveToFirst()) {
+            do {
+                Projects project = new Projects();
+                project.setProjectId(cursor.getInt(cursor.getColumnIndexOrThrow("project_id")));
+                project.setProjectName(cursor.getString(cursor.getColumnIndexOrThrow("project_name")));
+                project.setDescription(cursor.getString(cursor.getColumnIndexOrThrow("description")));
+                project.setCreatedBy(cursor.getInt(cursor.getColumnIndexOrThrow("created_by")));
+                project.setCreatedAt(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
+                list.add(project);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return list;
     }
 }
