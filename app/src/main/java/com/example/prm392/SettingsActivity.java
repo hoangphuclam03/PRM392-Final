@@ -13,6 +13,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -21,13 +22,18 @@ public class SettingsActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
     private Toolbar toolbar;
-
+    private FirebaseAuth mAuth;
     private SharedPreferences preferences;
     private static final String PREFS_NAME = "app_settings";
     private static final String KEY_DARK_THEME = "dark_theme";
     private static final String KEY_TIME_FORMAT_24H = "time_format_24h";
     private static final String KEY_ALL_NOTIFICATIONS = "all_notifications";
 
+    private void logoutUser() {
+        mAuth.signOut();
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // ---------------- Apply saved dark theme BEFORE super.onCreate ----------------
@@ -65,11 +71,14 @@ public class SettingsActivity extends AppCompatActivity {
                 startActivity(new Intent(SettingsActivity.this, HomeActivity.class));
                 finish(); // optional: close SettingsActivity
             } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Hồ sơ cá nhân clicked", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(SettingsActivity.this, HomeActivity.class);
+                intent.putExtra("openFragment", "profile");
+                startActivity(intent);
+                finish();
             } else if (id == R.id.nav_settings) {
                 drawerLayout.closeDrawers(); // already in SettingsActivity
             } else if (id == R.id.nav_logout) {
-                Toast.makeText(this, "Đăng xuất clicked", Toast.LENGTH_SHORT).show();
+                logoutUser();
             }
             drawerLayout.closeDrawers();
             return true;
