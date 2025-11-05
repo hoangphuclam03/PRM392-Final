@@ -2,10 +2,12 @@ package com.example.prm392;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.widget.Toolbar;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -38,17 +40,28 @@ public class HomeActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
+    // SharedPreferences keys
+    private static final String PREFS_NAME = "app_settings";
+    private static final String KEY_DARK_THEME = "dark_theme";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // ---------------- Apply saved dark theme BEFORE super.onCreate ----------------
+        SharedPreferences prefs = getSharedPreferences("app_settings", MODE_PRIVATE);
+        boolean darkTheme = prefs.getBoolean("dark_theme", false);
+        AppCompatDelegate.setDefaultNightMode(
+                darkTheme ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+        );
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        // 🔹 Initialize Firebase + SQLite
+        // ---------------- Initialize Firebase + SQLite ----------------
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         DBConnect localDb = new DBConnect(this);
 
-        // 🔹 Optional: insert a test project locally BEFORE syncing
+        // Optional: insert a test project locally BEFORE syncing
         Projects localTest = new Projects();
         localTest.setProjectId(1001);
         localTest.setProjectName("Offline Project Test");
@@ -58,12 +71,12 @@ public class HomeActivity extends AppCompatActivity {
         localDb.insertOrUpdateProject(localTest);
         Log.d("HOME", "Inserted local test project for sync verification");
 
-        // 🔹 Run sync tests (SQLite → Firebase → SQLite)
+        // Run sync tests (SQLite → Firebase → SQLite)
         SyncRepository syncRepo = new SyncRepository(this);
-        syncRepo.syncProjectsToFirebase();     // Upload local → Firebase
-        syncRepo.syncProjectsFromFirebase();   // Download Firebase → local
+        syncRepo.syncProjectsToFirebase();
+        syncRepo.syncProjectsFromFirebase();
 
-        // 🔹 Map UI
+        // ---------------- Map UI ----------------
         tvWelcome = findViewById(R.id.tvWelcome);
         btnLogout = findViewById(R.id.btnLogout);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -75,11 +88,12 @@ public class HomeActivity extends AppCompatActivity {
         toggle = new ActionBarDrawerToggle(
                 this, drawerLayout, toolbar,
                 R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close);
+                R.string.navigation_drawer_close
+        );
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // 🔹 Check logged-in user
+        // ---------------- Check logged-in user ----------------
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             loadUserInfo(user.getUid());
@@ -90,18 +104,21 @@ public class HomeActivity extends AppCompatActivity {
             finish();
         }
 
-        // 🔹 Logout button
+        // ---------------- Logout button ----------------
         btnLogout.setOnClickListener(v -> logoutUser());
 
-        // 🔹 Navigation menu logic
+        // ---------------- Navigation menu logic ----------------
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_home) {
-                tvWelcome.setText("Bạn đang ở: Trang chủ");
+                // Recreate activity to apply theme in case changed
+                recreate();
+                drawerLayout.closeDrawers();
             } else if (id == R.id.nav_profile) {
                 tvWelcome.setText("Bạn đang ở: Hồ sơ cá nhân");
             } else if (id == R.id.nav_settings) {
-                tvWelcome.setText("Bạn đang ở: Cài đặt");
+                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+                drawerLayout.closeDrawers();
             } else if (id == R.id.nav_logout) {
                 logoutUser();
             }
@@ -110,7 +127,22 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    // 🔹 Load user info from Firestore
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SharedPreferences prefs = getSharedPreferences("app_settings", MODE_PRIVATE);
+        boolean darkTheme = prefs.getBoolean("dark_theme", false);
+
+        int currentMode = getResources().getConfiguration().uiMode &
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+
+        if ((darkTheme && currentMode != android.content.res.Configuration.UI_MODE_NIGHT_YES) ||
+                (!darkTheme && currentMode == android.content.res.Configuration.UI_MODE_NIGHT_YES)) {
+            recreate(); // refresh activity to apply theme
+        }
+    }
+
+    // ---------------- Load user info from Firestore ----------------
     private void loadUserInfo(String uid) {
         DocumentReference ref = db.collection("Users").document(uid);
         ref.get().addOnSuccessListener(document -> {
@@ -134,7 +166,7 @@ public class HomeActivity extends AppCompatActivity {
         );
     }
 
-    // 🔹 Update last login timestamp
+    // ---------------- Update last login timestamp ----------------
     private void updateLastLogin(String uid) {
         Map<String, Object> update = new HashMap<>();
         update.put("lastLogin", System.currentTimeMillis());

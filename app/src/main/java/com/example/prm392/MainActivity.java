@@ -1,12 +1,14 @@
 package com.example.prm392;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -24,8 +26,18 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
+    private static final String PREFS_NAME = "app_settings";
+    private static final String KEY_DARK_THEME = "dark_theme";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // ---------------- Apply saved dark theme BEFORE super.onCreate ----------------
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean darkTheme = prefs.getBoolean(KEY_DARK_THEME, false);
+        AppCompatDelegate.setDefaultNightMode(
+                darkTheme ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+        );
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -62,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
                             if (user.isEmailVerified()) {
                                 Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
 
-                                // 🔥 Ghi thời gian đăng nhập vào Firestore (tự tạo nếu chưa có)
                                 Map<String, Object> update = new HashMap<>();
                                 update.put("lastLogin", System.currentTimeMillis());
 
