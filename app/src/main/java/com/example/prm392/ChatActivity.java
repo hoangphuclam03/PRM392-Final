@@ -55,7 +55,7 @@ public class ChatActivity extends AppCompatActivity {
     // ===== Team chat state =====
     private boolean isTeamChat = false;
     private String teamId = null;
-    private boolean restoredTeam = false; // đã khôi phục team từ prefs?
+    private boolean restoredTeam = false;
 
     // ===== UI =====
     private ChatRecyclerAdapter adapter;
@@ -73,21 +73,29 @@ public class ChatActivity extends AppCompatActivity {
     private ImageButton btnAddMember;
     private ImageButton btnTeamMenu;
 
+    // ===== Name helpers (đảm bảo luôn có tên) =====
     private String fullName(Users u) {
-        if (u == null) return "User";
-        String ln = u.getLastName() != null ? u.getLastName() : "";
-        String fn = u.getFirstName() != null ? u.getFirstName() : "";
+        if (u == null) return "Unknown";
+        if (u.getUsername() != null && !u.getUsername().trim().isEmpty()) {
+            return u.getUsername().trim();
+        }
+        String fn = u.getFirstName() != null ? u.getFirstName().trim() : "";
+        String ln = u.getLastName()  != null ? u.getLastName().trim()  : "";
         String name = (ln + " " + fn).trim();
-        return name.isEmpty() ? "User" : name;
+        return name.isEmpty() ? "Unknown" : name;
     }
 
     private String usersIdStr(Users u) {
         return (u == null) ? null : u.getUid(); // UID là String
     }
 
-    // ====== Helpers ======
+    // ====== Header bind (hiển thị tên & avatar) ======
     private void bindOtherUserHeader() {
-        if (otherUser == null) return;
+        if (otherUser == null) {
+            otherUsername.setText("Unknown");
+            return;
+        }
+
         otherUsername.setText(fullName(otherUser));
 
         String otherUid = usersIdStr(otherUser);
@@ -124,7 +132,6 @@ public class ChatActivity extends AppCompatActivity {
         String lastName = getSharedPreferences(PREFS, MODE_PRIVATE)
                 .getString(KEY_LAST_TEAM_NAME, "Team");
 
-        // Bật TEAM MODE
         isTeamChat = true;
         teamId = lastId;
         otherUser = null;
@@ -138,7 +145,7 @@ public class ChatActivity extends AppCompatActivity {
         setupTeamRecyclerView();
         if (adapter != null) adapter.startListening();
 
-        restoredTeam = true; // ĐÁNH DẤU đã khôi phục để onCreate không ghi đè
+        restoredTeam = true;
     }
 
     private void enterEmptyMode() {
@@ -184,7 +191,8 @@ public class ChatActivity extends AppCompatActivity {
                         .setQuery(query, ChatMessageModel.class)
                         .build();
 
-        adapter = new ChatRecyclerAdapter(options, getApplicationContext());
+        adapter = new ChatRecyclerAdapter(options, getApplicationContext(), false);
+
 
         LinearLayoutManager manager = new LinearLayoutManager(this);
         manager.setReverseLayout(true);
@@ -209,7 +217,8 @@ public class ChatActivity extends AppCompatActivity {
                         .setQuery(q, ChatMessageModel.class)
                         .build();
 
-        adapter = new ChatRecyclerAdapter(options, getApplicationContext());
+/** BẬT showSenderName = true cho team */
+        adapter = new ChatRecyclerAdapter(options, getApplicationContext(), true);
 
         LinearLayoutManager manager = new LinearLayoutManager(this);
         manager.setReverseLayout(true);
@@ -385,7 +394,6 @@ public class ChatActivity extends AppCompatActivity {
         imageView     = findViewById(R.id.profile_pic_image_view);
         btnTeamMenu   = findViewById(R.id.btn_team_menu);
 
-
         // ===== NHẬN TEAM TỪ TeamListActivity (ưu tiên) =====
         String openTeamId   = getIntent().getStringExtra("openTeamId");
         String openTeamName = getIntent().getStringExtra("openTeamName");
@@ -523,7 +531,14 @@ public class ChatActivity extends AppCompatActivity {
             Users u = doc.toObject(Users.class);
             if (u != null) {
                 if (u.getUid() == null || u.getUid().isEmpty()) {
-                    u.setUid(doc.getId()); // ✅ gán UID từ docId (chuỗi)
+                    u.setUid(doc.getId());
+                }
+                // Tự điền username nếu trống để header luôn có tên
+                if (u.getUsername() == null || u.getUsername().trim().isEmpty()) {
+                    String fn = u.getFirstName() != null ? u.getFirstName() : "";
+                    String ln = u.getLastName()  != null ? u.getLastName()  : "";
+                    String autoName = (ln + " " + fn).trim();
+                    if (!autoName.isEmpty()) u.setUsername(autoName);
                 }
                 otherUser = u;
                 bindOtherUserHeader();
@@ -544,6 +559,12 @@ public class ChatActivity extends AppCompatActivity {
                             if (u.getUid() == null || u.getUid().isEmpty()) {
                                 u.setUid(expectedUid);
                             }
+                            if (u.getUsername() == null || u.getUsername().trim().isEmpty()) {
+                                String fn = u.getFirstName() != null ? u.getFirstName() : "";
+                                String ln = u.getLastName()  != null ? u.getLastName()  : "";
+                                String autoName = (ln + " " + fn).trim();
+                                if (!autoName.isEmpty()) u.setUsername(autoName);
+                            }
                             otherUser = u;
                             bindOtherUserHeader();
                             initChatAfterHaveOther();
@@ -556,7 +577,6 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     // ====== TEAM open-by-name helpers ======
-    /** Mở team từ DocumentSnapshot (đã tìm thấy) */
     private void openTeamByDoc(DocumentSnapshot d) {
         String foundTeamId = d.getId();
         String foundName = String.valueOf(d.get("name"));
@@ -579,7 +599,6 @@ public class ChatActivity extends AppCompatActivity {
         restoredTeam = true;
     }
 
-    /** Tìm team theo tên (ưu tiên name_lower nếu có; fallback exact name) */
     private void openTeamByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             Toast.makeText(this, "Tên team trống", Toast.LENGTH_SHORT).show();
@@ -601,7 +620,6 @@ public class ChatActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> openTeamByNameExactFallback(q));
     }
 
-    /** Fallback: tìm exact theo field "name" (case-sensitive) */
     private void openTeamByNameExactFallback(String q) {
         FirebaseUtil.teamsCollection()
                 .whereEqualTo("name", q)
@@ -639,7 +657,6 @@ public class ChatActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // tạo doc team
                     teamId = FirebaseUtil.teamsCollection().document().getId();
                     Map<String, Object> data = new HashMap<>();
                     data.put("name", name);
@@ -653,7 +670,6 @@ public class ChatActivity extends AppCompatActivity {
 
                     FirebaseUtil.teamRef(teamId).set(data)
                             .addOnSuccessListener(v2 -> {
-                                // chuyển UI sang team mode
                                 isTeamChat = true;
                                 otherUser = null;
                                 otherUsername.setText(name);
@@ -662,7 +678,6 @@ public class ChatActivity extends AppCompatActivity {
                                 setupTeamRecyclerView();
                                 if (adapter != null) adapter.startListening();
 
-                                // lưu team để lần sau tự restore
                                 saveLastTeam(teamId, name);
                                 restoredTeam = true;
                                 if (btnAddMember != null) btnAddMember.setVisibility(View.VISIBLE);
@@ -697,7 +712,7 @@ public class ChatActivity extends AppCompatActivity {
                                     "updatedAt", Timestamp.now())
                             .addOnSuccessListener(v -> {
                                 otherUsername.setText(name);
-                                saveLastTeam(teamId, name); // cập nhật tên nhớ
+                                saveLastTeam(teamId, name);
                             });
                 })
                 .setNegativeButton("Hủy", null)

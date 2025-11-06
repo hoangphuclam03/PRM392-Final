@@ -46,6 +46,9 @@
     </service>
     <activity android:name=".AddMemberActivity" android:exported="false"/>
         <activity android:name=".RemoveMemberActivity" android:exported="false"/>
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
 
     </application>
 
