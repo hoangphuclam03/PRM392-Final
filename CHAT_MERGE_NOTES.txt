@@ -1,0 +1,17 @@
+Chat feature merged from test1 into PRM392-Final.
+
+What's added:
+- Java: ChatActivity, ChatFragment, adapters, models, utils, FCMNotificationService under package com.example.prm392
+- Layouts: activity_chat.xml, fragment_chat.xml, chat_message_recycler_row.xml, recent_chat_recycler_row.xml
+- Dependencies added in app/build.gradle.kts: Firestore, Storage, FirebaseUI Firestore, OkHttp, Glide
+- Manifest: INTERNET permission + FCMNotificationService
+
+To wire it up:
+1) From HomeActivity or your navigation, start ChatActivity with an Intent that includes the other user's UserModel fields:
+   intent.putExtra("username", ...); intent.putExtra("phone", ...); intent.putExtra("userId", ...); intent.putExtra("fcmToken", ...);
+
+2) Ensure your Firebase project (google-services.json) in :app is valid and has Firestore and Cloud Messaging enabled.
+
+3) If you see missing resources (colors/styles), copy any needed styles or drawables from test1 project.
+
+4) If you don't want Firestore (and prefer Realtime DB), you'll need to adapt FirebaseUtil accordingly.

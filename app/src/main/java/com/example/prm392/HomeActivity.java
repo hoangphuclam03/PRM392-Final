@@ -15,6 +15,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -134,6 +135,8 @@ public class HomeActivity extends AppCompatActivity {
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_profile) {
                 tvWelcome.setText("Bạn đang ở: Hồ sơ cá nhân");
+            } else if (id == R.id.nav_chat) {
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class));
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
                 drawerLayout.closeDrawers();

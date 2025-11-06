@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.prm392">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -12,26 +11,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
+        <activity android:name=".TeamListActivity"/>
 
-        <activity android:name=".ListProjectsActivity" />
-   
         <activity
-            android:name=".SettingsActivity"
-            android:label="@string/title_settings"
-            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
-            android:exported="true" />
+            android:name=".ChatActivity"
+            android:exported="false" />
 
-        
+
+        <!-- ✅ Màn hình chính sau khi login -->
         <activity
             android:name=".HomeActivity"
             android:exported="true" />
 
-       
+        <!-- Màn hình đăng ký -->
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
 
-        
+        <!-- Màn hình đăng nhập -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -41,9 +38,15 @@
             </intent-filter>
         </activity>
 
-        
-        <activity android:name=".ListMembersActivity" android:exported="false" />
-        <activity android:name=".CreateProjectActivity" android:exported="false" />
 
-    </application>
+    <service android:name=".FCMNotificationService" android:exported="false">
+        <intent-filter>
+            <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+        </intent-filter>
+    </service>
+    <activity android:name=".AddMemberActivity" android:exported="false"/>
+</application>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
 </manifest>
