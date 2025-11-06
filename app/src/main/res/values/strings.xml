@@ -28,6 +28,15 @@
     <string name="UserProfile">Hồ sơ cá nhân</string>
     <string name="Settings">Cài đặt</string>
     <string name="LogOut">Đăng xuất</string>
+
+
+    <string name="cd_back">Back</string>
+    <string name="cd_send_message">Send message</string>
+    <string name="hint_write_message">Write message here</string>
+
+
+    <string name="add_member">Thêm thành viên</string>
+    <string name="team_menu">Menu team</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

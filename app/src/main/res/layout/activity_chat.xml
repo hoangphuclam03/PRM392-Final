@@ -10,6 +10,8 @@
 
     <!-- List messages -->
 
+    <!-- Bottom input -->
+
     <RelativeLayout
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -42,18 +44,6 @@
             android:layout_toEndOf="@id/back_btn" />
 
         <!-- Title -->
-        <TextView
-            android:id="@+id/other_username"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="10dp"
-            android:layout_toStartOf="@id/btn_add_member"
-            android:layout_toEndOf="@id/profile_pic_layout"
-            android:text="Chưa chọn người"
-            android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
 
         <!-- Team menu ▾ (ở mép phải) -->
         <ImageButton
@@ -83,16 +73,14 @@
 
     </RelativeLayout>
 
-    <!-- Bottom input -->
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottom_layout"
         android:layout_below="@id/toolbar"
-        android:layout_marginTop="1dp"
-        android:layout_marginBottom="-1dp" />
+        android:layout_marginTop="98dp"
+        android:layout_marginBottom="-98dp" />
 
     <RelativeLayout
         android:id="@+id/bottom_layout"
@@ -127,5 +115,16 @@
             android:hint="@string/hint_write_message"
             android:padding="10dp" />
     </RelativeLayout>
+
+    <TextView
+        android:id="@+id/other_username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="130dp"
+        android:layout_marginEnd="-341dp"
+        android:text="Chưa chọn người"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
 </RelativeLayout>

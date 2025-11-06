@@ -1,19 +1,16 @@
 package com.example.prm392.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.prm392.ChatActivity;
 import com.example.prm392.R;
 import com.example.prm392.model.ChatMessageModel;
 import com.example.prm392.utils.FirebaseUtil;
