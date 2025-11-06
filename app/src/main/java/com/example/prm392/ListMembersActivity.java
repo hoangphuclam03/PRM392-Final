@@ -21,8 +21,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
+import data.local.DBConnect;
 import models.ProjectMembers;
-import utils.DBConnect;
 
 public class ListMembersActivity extends AppCompatActivity {
 

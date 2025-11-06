@@ -13,8 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
 
-        <activity
-            android:name=".ListProjectsActivity"
+        <activity android:name=".ListProjectsActivity" />
    
         <activity
             android:name=".SettingsActivity"
@@ -45,9 +44,6 @@
         
         <activity android:name=".ListMembersActivity" android:exported="false" />
         <activity android:name=".CreateProjectActivity" android:exported="false" />
-
-    </application>
-
 
     </application>
 </manifest>
