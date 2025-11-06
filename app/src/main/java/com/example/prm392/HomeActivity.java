@@ -8,6 +8,7 @@ import androidx.appcompat.widget.Toolbar;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.Toast;
 import android.widget.TextView;
 
 import com.google.android.material.navigation.NavigationView;
@@ -60,6 +61,8 @@ public class HomeActivity extends AppCompatActivity {
                 tvWelcome.setText("Bạn đang ở: Trang chủ");
             } else if (id == R.id.nav_profile) {
                 tvWelcome.setText("Bạn đang ở: Hồ sơ cá nhân");
+            } else if (id == R.id.nav_chat) {
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class));
             } else if (id == R.id.nav_settings) {
                 tvWelcome.setText("Bạn đang ở: Cài đặt");
             } else if (id == R.id.nav_logout) {

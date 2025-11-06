@@ -7,9 +7,13 @@
         android:id="@+id/nav_profile"
         android:title="Hồ sơ cá nhân" />
     <item
+        android:id="@+id/nav_chat"
+        android:title="Chat" />
+    <item
         android:id="@+id/nav_settings"
         android:title="Cài đặt" />
     <item
         android:id="@+id/nav_logout"
         android:title="Đăng xuất" />
+
 </menu>

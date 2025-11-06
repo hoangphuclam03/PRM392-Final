@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ChatActivity">
+
+    <!-- Toolbar -->
+
+    <!-- List messages -->
+
+    <RelativeLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/my_primary"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
+
+        <!-- Back -->
+        <ImageButton
+            android:id="@+id/back_btn"
+            android:layout_width="54dp"
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_back"
+            android:src="@drawable/icon_back"
+            android:tooltipText="@string/cd_back"
+            app:tint="@color/white" />
+
+        <!-- Avatar -->
+        <include
+            android:id="@+id/profile_pic_layout"
+            layout="@layout/profile_pic_view"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="10dp"
+            android:layout_toEndOf="@id/back_btn" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/other_username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="10dp"
+            android:layout_toStartOf="@id/btn_add_member"
+            android:layout_toEndOf="@id/profile_pic_layout"
+            android:text="Chưa chọn người"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <!-- Team menu ▾ (ở mép phải) -->
+        <ImageButton
+            android:id="@+id/btn_team_menu"
+            android:layout_width="70dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/team_menu"
+            android:src="@drawable/outline_arrow_drop_down_24"
+            app:tint="@android:color/white" />
+
+        <!-- Add member + (đứng bên trái nút ▾) -->
+        <ImageButton
+            android:id="@+id/btn_add_member"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/btn_team_menu"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/add_member"
+            android:src="@drawable/ic_person_add_24"
+            android:visibility="gone"
+            app:tint="@android:color/white" />
+
+    </RelativeLayout>
+
+    <!-- Bottom input -->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chat_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_layout"
+        android:layout_below="@id/toolbar"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="-1dp" />
+
+    <RelativeLayout
+        android:id="@+id/bottom_layout"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_alignParentBottom="true"
+        android:padding="8dp">
+
+        <ImageButton
+            android:id="@+id/message_send_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_send_message"
+            android:tooltipText="@string/cd_send_message"
+            android:padding="8dp"
+            app:tint="@color/my_primary"
+            android:src="@drawable/icon_send" />
+
+        <EditText
+            android:id="@+id/chat_message_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/message_send_btn"
+            android:layout_alignParentStart="true"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/edit_text_rounded_corner"
+            android:elevation="4dp"
+            android:hint="@string/hint_write_message"
+            android:padding="10dp" />
+    </RelativeLayout>
+
+</RelativeLayout>

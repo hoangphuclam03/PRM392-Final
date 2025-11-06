@@ -11,6 +11,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
+        <activity android:name=".TeamListActivity"/>
+
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false" />
+
 
         <!-- ✅ Màn hình chính sau khi login -->
         <activity
@@ -32,6 +38,15 @@
             </intent-filter>
         </activity>
 
-    </application>
+
+    <service android:name=".FCMNotificationService" android:exported="false">
+        <intent-filter>
+            <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+        </intent-filter>
+    </service>
+    <activity android:name=".AddMemberActivity" android:exported="false"/>
+</application>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
 
 </manifest>
