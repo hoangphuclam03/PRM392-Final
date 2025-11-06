@@ -13,24 +13,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
 
-        <!-- Settings Activity -->
+        <activity
+            android:name=".ListProjectsActivity"
+   
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_settings"
             android:theme="@style/Theme.Material3.DayNight.NoActionBar"
             android:exported="true" />
 
-        <!-- Home Activity -->
+        
         <activity
             android:name=".HomeActivity"
             android:exported="true" />
 
-        <!-- Register Activity -->
+       
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
 
-        <!-- Main / Login Activity -->
+        
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -39,6 +41,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        
+        <activity android:name=".ListMembersActivity" android:exported="false" />
+        <activity android:name=".CreateProjectActivity" android:exported="false" />
+
+    </application>
+
 
     </application>
 </manifest>

@@ -17,6 +17,13 @@ public class Projects {
         this.createdAt = createdAt;
     }
 
+    // ✅ Constructor thêm mới để tương thích với ListProjectsActivity
+    public Projects(int projectId, String projectName, String description) {
+        this.projectId = projectId;
+        this.projectName = projectName;
+        this.description = description;
+    }
+
     public int getProjectId() {
         return projectId;
     }
