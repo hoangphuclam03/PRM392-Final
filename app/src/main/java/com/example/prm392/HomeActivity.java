@@ -142,8 +142,13 @@ public class HomeActivity extends AppCompatActivity {
                 drawerLayout.closeDrawers();
             } else if (id == R.id.nav_logout) {
                 logoutUser();
-            }
+            } else if (id == R.id.nav_calendar) {  // <-- ID của mục “Lịch”
+            startActivity(new Intent(HomeActivity.this, CalendarEventsActivity.class));
             drawerLayout.closeDrawers();
+            return true; // nhớ return true để sự kiện không bị rơi
+        }
+
+        drawerLayout.closeDrawers();
             return true;
         });
     }

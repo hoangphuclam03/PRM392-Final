@@ -16,8 +16,8 @@
         android:id="@+id/nav_logout"
         android:title="Đăng xuất" />
     <item
-        android:id="@+id/calendar"
-        android:title="Lich" />
+        android:id="@+id/nav_calendar"
+        android:title="Lịch" />
 
 
 </menu>

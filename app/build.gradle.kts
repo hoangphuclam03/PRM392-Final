@@ -64,6 +64,8 @@ dependencies {
     implementation(libs.guava)
     // WorkManager
     implementation(libs.work.runtime)
+    implementation(libs.material.calendarview)
+    implementation("com.jakewharton.threetenabp:threetenabp:1.3.1")
 
     // Testing
     testImplementation(libs.junit)
