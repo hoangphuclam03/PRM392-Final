@@ -45,7 +45,9 @@
         </intent-filter>
     </service>
     <activity android:name=".AddMemberActivity" android:exported="false"/>
-</application>
+        <activity android:name=".RemoveMemberActivity" android:exported="false"/>
+
+    </application>
 
     <uses-permission android:name="android.permission.INTERNET"/>
 

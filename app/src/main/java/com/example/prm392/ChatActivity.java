@@ -355,7 +355,6 @@ public class ChatActivity extends AppCompatActivity {
         otherUsername = findViewById(R.id.other_username);
         recyclerView  = findViewById(R.id.chat_recycler_view);
         imageView     = findViewById(R.id.profile_pic_image_view);
-        btnAddMember  = findViewById(R.id.btn_add_member);
         btnTeamMenu   = findViewById(R.id.btn_team_menu);
 
         // ===== NHẬN TEAM TỪ TeamListActivity (ưu tiên) =====
@@ -452,6 +451,29 @@ public class ChatActivity extends AppCompatActivity {
                         renameTeam(); return true;
                     } else if (id == R.id.action_delete_team) {
                         deleteTeam(); return true;
+                    }
+                    else if (id == R.id.action_add_member) {
+                        if (!isTeamChat || teamId == null) {
+                            Toast.makeText(this, "Hãy mở hoặc tạo team trước", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Intent i = new Intent(ChatActivity.this, AddMemberActivity.class);
+                            i.putExtra("teamId", teamId);
+                            startActivity(i);
+                        }
+                        return true;
+                    }
+
+                    else if (id == R.id.action_delete_member) {
+                        if (!isTeamChat || teamId == null) {
+                            Toast.makeText(this, "Hãy mở team trước", Toast.LENGTH_SHORT).show();
+                            return true;
+                        }
+
+                        // Mở màn hình xoá thành viên (bạn có thể tạo activity riêng)
+                        Intent i = new Intent(ChatActivity.this, RemoveMemberActivity.class);
+                        i.putExtra("teamId", teamId);
+                        startActivity(i);
+                        return true;
                     }
                     return false;
                 });

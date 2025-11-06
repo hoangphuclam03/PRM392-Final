@@ -22,9 +22,14 @@ public class AddMemberActivity extends AppCompatActivity {
     private RecyclerView rv;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_user);
         setTitle("Thêm thành viên");
+        android.widget.ImageButton back = findViewById(R.id.back_btn);
+        if (back != null) {
+            back.setOnClickListener(v -> finish());
+        }
 
         teamId = getIntent().getStringExtra("teamId");
         if (teamId == null) { Toast.makeText(this, "Thiếu teamId", Toast.LENGTH_SHORT).show(); finish(); return; }
