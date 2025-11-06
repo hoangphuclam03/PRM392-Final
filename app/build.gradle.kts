@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.prm392"
-    compileSdk = 36  // Dùng số trực tiếp, không cần "version = release(36)"
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.prm392"
@@ -34,25 +34,35 @@ android {
 }
 
 dependencies {
-// WorkManager runtime
-    implementation(libs.work.runtime)
+    // ✅ Firebase BoM controls versions automatically
+    implementation(platform(libs.firebase.bom))
 
-    implementation(libs.guava)
-    // AndroidX cơ bản
+    // Firebase core services
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.google.firebase.storage)
+    implementation(libs.google.firebase.database)
+    implementation(libs.firebase.messaging)
+
+    // FirebaseUI (Firestore adapter)
+    implementation(libs.firebase.ui.firestore)
+
+    // OkHttp (network sync)
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+
+    // Glide (for image loading)
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
+
+    // AndroidX core + Material
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-
-    // Firebase Authentication
-    implementation(libs.firebase.auth)
-
-    // ✅ Firestore Database (thay cho Realtime)
-    implementation(libs.firebase.firestore)
-
-    // Navigation Drawer
     implementation(libs.drawerlayout)
-    implementation(libs.material)
+    implementation(libs.guava)
+    // WorkManager
     implementation(libs.work.runtime)
 
     // Testing
