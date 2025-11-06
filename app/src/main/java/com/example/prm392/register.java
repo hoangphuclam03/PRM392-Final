@@ -13,7 +13,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
-import utils.DBConnect;
+import data.local.DBConnect;
 
 public class register extends AppCompatActivity {
 

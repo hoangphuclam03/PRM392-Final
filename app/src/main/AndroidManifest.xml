@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.prm392">
 
     <application
         android:allowBackup="true"
@@ -12,9 +13,28 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
 
-        <!-- ✅ Màn hình mở đầu -->
         <activity
             android:name=".ListProjectsActivity"
+   
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_settings"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:exported="true" />
+
+        
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true" />
+
+       
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false" />
+
+        
+        <activity
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -22,12 +42,12 @@
             </intent-filter>
         </activity>
 
-        <!-- Các màn hình khác -->
+        
         <activity android:name=".ListMembersActivity" android:exported="false" />
         <activity android:name=".CreateProjectActivity" android:exported="false" />
-        <activity android:name=".MainActivity" android:exported="false" />
-        <activity android:name=".register" android:exported="false" />
 
     </application>
 
+
+    </application>
 </manifest>

@@ -5,12 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
+    android:background="?attr/colorSurface"
     tools:context=".register">
 
     <!-- Tiêu đề -->
-
-    <!-- Ô nhập Họ -->
-
     <TextView
         android:id="@+id/tvSignUpTitle"
         android:layout_width="wrap_content"
@@ -18,12 +16,13 @@
         android:layout_marginStart="60dp"
         android:layout_marginTop="156dp"
         android:text="Đăng Ký Tài Khoản"
-        android:textColor="#000000"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Ô nhập Họ -->
     <EditText
         android:id="@+id/edtFirstName"
         android:layout_width="0dp"
@@ -31,6 +30,8 @@
         android:hint="Họ"
         android:inputType="textPersonName"
         android:padding="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/tvSignUpTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/edtLastName"
@@ -46,6 +47,8 @@
         android:hint="Tên"
         android:inputType="textPersonName"
         android:padding="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/tvSignUpTitle"
         app:layout_constraintStart_toEndOf="@id/edtFirstName"
         app:layout_constraintEnd_toEndOf="parent"
@@ -61,6 +64,8 @@
         android:hint="Email"
         android:inputType="textEmailAddress"
         android:padding="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/edtFirstName"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -74,6 +79,8 @@
         android:hint="Mật Khẩu"
         android:inputType="textPassword"
         android:padding="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/edtEmailRegister"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/edtConfirmPassword"
@@ -89,6 +96,8 @@
         android:hint="Xác Nhận Mật Khẩu"
         android:inputType="textPassword"
         android:padding="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/edtEmailRegister"
         app:layout_constraintStart_toEndOf="@id/edtPasswordRegister"
         app:layout_constraintEnd_toEndOf="parent"
@@ -103,7 +112,7 @@
         android:layout_height="wrap_content"
         android:text="Ít nhất 6 ký tự, bao gồm chữ và số"
         android:textSize="12sp"
-        android:textColor="#666666"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/edtPasswordRegister"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="8dp" />
@@ -114,6 +123,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Đồng ý với điều khoản sử dụng"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/tvPasswordNote"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="16dp" />
@@ -124,8 +134,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Tạo Tài Khoản"
-        android:backgroundTint="#4CAF50"
-        android:textColor="#FFFFFF"
+        android:backgroundTint="?attr/colorPrimary"
+        android:textColor="?attr/colorOnPrimary"
         app:layout_constraintTop_toBottomOf="@id/cbAgree"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -137,7 +147,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Đã có tài khoản? Đăng nhập ngay"
-        android:textColor="#000000"
+        android:textColor="?attr/colorOnSurface"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/btnCreateAccount"
         app:layout_constraintStart_toStartOf="parent"
