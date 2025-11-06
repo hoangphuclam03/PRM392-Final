@@ -60,19 +60,17 @@
             android:src="@drawable/outline_arrow_drop_down_24"
             app:tint="@android:color/white" />
 
-        <!-- Add member + (đứng bên trái nút ▾) -->
-        <ImageButton
-            android:id="@+id/btn_add_member"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="8dp"
-            android:layout_toStartOf="@id/btn_team_menu"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/add_member"
-            android:src="@drawable/ic_person_add_24"
-            android:visibility="gone"
-            app:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/other_username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="130dp"
+            android:layout_marginEnd="-341dp"
+            android:text="Chưa chọn người"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
     </RelativeLayout>
 
@@ -82,8 +80,8 @@
         android:layout_height="match_parent"
         android:layout_above="@id/bottom_layout"
         android:layout_below="@id/toolbar"
-        android:layout_marginTop="98dp"
-        android:layout_marginBottom="-98dp" />
+        android:layout_marginTop="-1dp"
+        android:layout_marginBottom="1dp" />
 
     <RelativeLayout
         android:id="@+id/bottom_layout"
@@ -118,16 +116,5 @@
             android:hint="@string/hint_write_message"
             android:padding="10dp" />
     </RelativeLayout>
-
-    <TextView
-        android:id="@+id/other_username"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="130dp"
-        android:layout_marginEnd="-341dp"
-        android:text="Chưa chọn người"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        android:textStyle="bold" />
 
 </RelativeLayout>

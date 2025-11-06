@@ -1,4 +1,4 @@
-package com.example.prm392.model;
+package models;
 
 import com.google.firebase.Timestamp;
 
