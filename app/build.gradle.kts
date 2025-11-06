@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.prm392"
-    compileSdk = 34  // Dùng số trực tiếp, không cần "version = release(36)"
+    compileSdk = 36  // Dùng số trực tiếp, không cần "version = release(36)"
 
     defaultConfig {
         applicationId = "com.example.prm392"
         minSdk = 27
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -34,6 +34,10 @@ android {
 }
 
 dependencies {
+// WorkManager runtime
+    implementation(libs.work.runtime)
+
+    implementation(libs.guava)
     // AndroidX cơ bản
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -44,11 +48,12 @@ dependencies {
     implementation(libs.firebase.auth)
 
     // ✅ Firestore Database (thay cho Realtime)
-    implementation("com.google.firebase:firebase-firestore:25.0.0")
+    implementation(libs.firebase.firestore)
 
     // Navigation Drawer
-    implementation("androidx.drawerlayout:drawerlayout:1.2.0")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation(libs.drawerlayout)
+    implementation(libs.material)
+    implementation(libs.work.runtime)
 
     // Testing
     testImplementation(libs.junit)

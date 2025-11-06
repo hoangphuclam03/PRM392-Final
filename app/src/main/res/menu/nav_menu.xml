@@ -2,14 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:title="Trang chủ" />
+        android:title="@string/Homepage" />
     <item
         android:id="@+id/nav_profile"
-        android:title="Hồ sơ cá nhân" />
+        android:title="@string/UserProfile" />
     <item
         android:id="@+id/nav_settings"
-        android:title="Cài đặt" />
+        android:title="@string/Settings" />
     <item
         android:id="@+id/nav_logout"
-        android:title="Đăng xuất" />
+        android:title="@string/LogOut" />
 </menu>

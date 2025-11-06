@@ -1,12 +1,14 @@
 package com.example.prm392;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -17,15 +19,27 @@ import com.google.firebase.firestore.SetOptions;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+import data.sync.SyncScheduler;
 
+public class MainActivity extends AppCompatActivity {
+    private SyncScheduler syncScheduler;
     private EditText edtEmail, edtPassword;
     private Button btnLogin, btnRegister;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
+    private static final String PREFS_NAME = "app_settings";
+    private static final String KEY_DARK_THEME = "dark_theme";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // ---------------- Apply saved dark theme BEFORE super.onCreate ----------------
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean darkTheme = prefs.getBoolean(KEY_DARK_THEME, false);
+        AppCompatDelegate.setDefaultNightMode(
+                darkTheme ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+        );
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -37,6 +51,11 @@ public class MainActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
+        // 🔹 Start background synchronization
+        syncScheduler = new SyncScheduler(this);
+        syncScheduler.start();
+
+        // 🔹 Buttons
         btnRegister.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, RegisterActivity.class));
             finish();
@@ -62,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
                             if (user.isEmailVerified()) {
                                 Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
 
-                                // 🔥 Ghi thời gian đăng nhập vào Firestore (tự tạo nếu chưa có)
                                 Map<String, Object> update = new HashMap<>();
                                 update.put("lastLogin", System.currentTimeMillis());
 
@@ -90,10 +108,26 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null && user.isEmailVerified()) {
             startActivity(new Intent(MainActivity.this, HomeActivity.class));
             finish();
+        }
+
+        // 🔹 Resume background sync when activity visible
+        if (syncScheduler != null) {
+            syncScheduler.start();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        // 🔹 Stop sync when activity is hidden to save battery
+        if (syncScheduler != null) {
+            syncScheduler.stop();
         }
     }
 }
