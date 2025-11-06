@@ -11,8 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.prm392.adapter.RecentChatRecyclerAdapter;
-import com.example.prm392.model.ChatroomModel;
-import com.example.prm392.model.UserModel;
+import models.ChatroomModel;
+
 import com.example.prm392.utils.FirebaseUtil;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.firebase.firestore.Query;

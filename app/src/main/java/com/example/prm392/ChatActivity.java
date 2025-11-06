@@ -18,13 +18,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.adapter.ChatRecyclerAdapter;
-import com.example.prm392.model.ChatMessageModel;
-import com.example.prm392.model.ChatroomModel;
-import com.example.prm392.model.UserModel;
+import models.ChatMessageModel;
+import models.ChatroomModel;
+import models.Users;
+
 import com.example.prm392.utils.AndroidUtil;
 import com.example.prm392.utils.FirebaseUtil;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
 
 import org.json.JSONObject;
@@ -32,6 +34,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import okhttp3.Call;
@@ -45,7 +48,7 @@ import okhttp3.Response;
 public class ChatActivity extends AppCompatActivity {
 
     // ===== Private chat state =====
-    private UserModel otherUser;
+    private Users otherUser;
     private String chatroomId;
     private ChatroomModel chatroomModel;
 
@@ -70,12 +73,27 @@ public class ChatActivity extends AppCompatActivity {
     private ImageButton btnAddMember;
     private ImageButton btnTeamMenu;
 
+    private String fullName(Users u) {
+        if (u == null) return "User";
+        String ln = u.getLastName() != null ? u.getLastName() : "";
+        String fn = u.getFirstName() != null ? u.getFirstName() : "";
+        String name = (ln + " " + fn).trim();
+        return name.isEmpty() ? "User" : name;
+    }
+
+    private String usersIdStr(Users u) {
+        return (u == null) ? null : u.getUid(); // UID là String
+    }
+
     // ====== Helpers ======
     private void bindOtherUserHeader() {
         if (otherUser == null) return;
-        otherUsername.setText(otherUser.getUsername() != null ? otherUser.getUsername() : "User");
+        otherUsername.setText(fullName(otherUser));
 
-        FirebaseUtil.getOtherProfilePicStorageRef(otherUser.getUserId())
+        String otherUid = usersIdStr(otherUser);
+        if (otherUid == null) return;
+
+        FirebaseUtil.getOtherProfilePicStorageRef(otherUid)
                 .getDownloadUrl()
                 .addOnSuccessListener(uri -> AndroidUtil.setProfilePic(this, uri, imageView))
                 .addOnFailureListener(e -> { /* ignore */ });
@@ -138,7 +156,8 @@ public class ChatActivity extends AppCompatActivity {
             Toast.makeText(this, "Bạn chưa đăng nhập.", Toast.LENGTH_LONG).show();
             return;
         }
-        if (otherUser == null || otherUser.getUserId() == null) {
+        String otherUid = usersIdStr(otherUser);
+        if (otherUser == null || otherUid == null) {
             enterEmptyMode();
             return;
         }
@@ -146,7 +165,7 @@ public class ChatActivity extends AppCompatActivity {
         isTeamChat = false;
         teamId = null;
 
-        chatroomId = FirebaseUtil.getChatroomId(myUid, otherUser.getUserId());
+        chatroomId = FirebaseUtil.getChatroomId(myUid, otherUid);
         getOrCreateChatroomModel();
         setupPrivateRecyclerView();
 
@@ -246,15 +265,17 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         // PRIVATE MODE
-        if (chatroomId == null || otherUser == null) {
+        String otherUid = usersIdStr(otherUser);
+        if (chatroomId == null || otherUser == null || otherUid == null) {
             Toast.makeText(this, "Hãy chọn người để chat (nút +).", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (chatroomModel == null) {
+            String myUid2 = FirebaseUtil.currentUserId();
             chatroomModel = new ChatroomModel(
                     chatroomId,
-                    Arrays.asList(myUid, otherUser.getUserId()),
+                    Arrays.asList(myUid2, otherUid),
                     Timestamp.now(),
                     ""
             );
@@ -282,10 +303,11 @@ public class ChatActivity extends AppCompatActivity {
                     chatroomModel = snap.toObject(ChatroomModel.class);
                     if (chatroomModel == null) {
                         String myUid = FirebaseUtil.currentUserId();
-                        if (myUid == null || otherUser == null) return;
+                        String otherUid = usersIdStr(otherUser);
+                        if (myUid == null || otherUid == null) return;
                         chatroomModel = new ChatroomModel(
                                 chatroomId,
-                                Arrays.asList(myUid, otherUser.getUserId()),
+                                Arrays.asList(myUid, otherUid),
                                 Timestamp.now(),
                                 ""
                         );
@@ -297,10 +319,16 @@ public class ChatActivity extends AppCompatActivity {
     // ===== FCM push to other user (private chat) =====
     private void sendNotification(String message) {
         FirebaseUtil.currentUserDetails().get().addOnSuccessListener(doc -> {
-            UserModel currentUser = doc.toObject(UserModel.class);
+            models.Users currentUser = doc.toObject(models.Users.class);
             if (currentUser == null) return;
 
-            String token = (otherUser != null) ? otherUser.getFcmToken() : null;
+            String token = null;
+            try {
+                java.lang.reflect.Method m = otherUser.getClass().getMethod("getFcmToken");
+                Object val = m.invoke(otherUser);
+                if (val != null) token = String.valueOf(val);
+            } catch (Exception ignore) { /* Users chưa có fcmToken → skip */ }
+
             if (token == null || token.isEmpty()) {
                 Log.w("FCM", "Other user has no FCM token. Skip notify.");
                 return;
@@ -310,11 +338,11 @@ public class ChatActivity extends AppCompatActivity {
                 JSONObject root = new JSONObject();
 
                 JSONObject notificationObj = new JSONObject();
-                notificationObj.put("title", currentUser.getUsername());
+                notificationObj.put("title", currentUser.getUsername()); // hoặc fullName(otherUser)
                 notificationObj.put("body", message);
 
                 JSONObject dataObj = new JSONObject();
-                dataObj.put("userId", currentUser.getUserId());
+                dataObj.put("userId", currentUser.getUid());
 
                 root.put("notification", notificationObj);
                 root.put("data", dataObj);
@@ -355,13 +383,15 @@ public class ChatActivity extends AppCompatActivity {
         otherUsername = findViewById(R.id.other_username);
         recyclerView  = findViewById(R.id.chat_recycler_view);
         imageView     = findViewById(R.id.profile_pic_image_view);
-        btnAddMember  = findViewById(R.id.btn_add_member);
         btnTeamMenu   = findViewById(R.id.btn_team_menu);
+
 
         // ===== NHẬN TEAM TỪ TeamListActivity (ưu tiên) =====
         String openTeamId   = getIntent().getStringExtra("openTeamId");
         String openTeamName = getIntent().getStringExtra("openTeamName");
-        if (openTeamId != null) {
+
+        // TH1: Có teamId -> mở trực tiếp
+        if (openTeamId != null && !openTeamId.trim().isEmpty()) {
             isTeamChat = true;
             teamId = openTeamId;
             otherUser = null;
@@ -378,6 +408,10 @@ public class ChatActivity extends AppCompatActivity {
             saveLastTeam(teamId, (openTeamName != null ? openTeamName : "Team"));
             restoredTeam = true;
         }
+        // TH2: Không có teamId nhưng có tên -> tìm theo name rồi mở
+        else if (openTeamName != null && !openTeamName.trim().isEmpty()) {
+            openTeamByName(openTeamName.trim());
+        }
 
         // ẩn + mặc định (hiện khi team mode)
         if (btnAddMember != null) btnAddMember.setVisibility(isTeamChat ? View.VISIBLE : View.GONE);
@@ -386,32 +420,24 @@ public class ChatActivity extends AppCompatActivity {
         if (!restoredTeam) enterEmptyMode();
         tryRestoreLastTeam(); // KHÔI PHỤC TEAM nếu có
 
-        // Nếu đã restore team thì KHÔNG chạy nhánh private/empty nữa
+        // Private chat (khi không mở team)
         if (!restoredTeam) {
-            // Nhận model user từ Intent (nếu có) → vào private chat
-            otherUser = AndroidUtil.getUserModelFromIntent(getIntent());
-            if (otherUser == null || otherUser.getUserId() == null) {
-                String otherUid = getIntent().getStringExtra("userId");
-                if (otherUid != null && !otherUid.isEmpty()) {
-                    FirebaseUtil.allUserCollectionReference().document(otherUid).get()
-                            .addOnSuccessListener(doc -> {
-                                UserModel u = doc.toObject(UserModel.class);
-                                if (u != null) {
-                                    u.setUserId(doc.getId());
-                                    otherUser = u;
-                                    bindOtherUserHeader();
-                                    initChatAfterHaveOther();
-                                } else {
-                                    if (!restoredTeam) enterEmptyMode();
-                                }
-                            })
-                            .addOnFailureListener(e -> { if (!restoredTeam) enterEmptyMode(); });
-                } else {
-                    if (!restoredTeam) enterEmptyMode();
-                }
+            String otherUidFromIntent = getIntent().getStringExtra("userUid");
+            if (otherUidFromIntent == null || otherUidFromIntent.trim().isEmpty()) {
+                otherUidFromIntent = getIntent().getStringExtra("userId");
+            }
+
+            if (otherUidFromIntent != null && !otherUidFromIntent.trim().isEmpty()) {
+                final String otherUid = otherUidFromIntent.trim();
+
+                // docId == uid (khuyến nghị)
+                FirebaseUtil.allUserCollectionReference()
+                        .document(otherUid)
+                        .get()
+                        .addOnSuccessListener(doc -> handleUserDocLoaded(doc, otherUid))
+                        .addOnFailureListener(e -> enterEmptyMode());
             } else {
-                bindOtherUserHeader();
-                initChatAfterHaveOther();
+                enterEmptyMode();
             }
         }
 
@@ -452,12 +478,145 @@ public class ChatActivity extends AppCompatActivity {
                         renameTeam(); return true;
                     } else if (id == R.id.action_delete_team) {
                         deleteTeam(); return true;
+                    } else if (id == R.id.action_add_member) {
+                        if (!isTeamChat || teamId == null) {
+                            Toast.makeText(this, "Hãy mở hoặc tạo team trước", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Intent i = new Intent(ChatActivity.this, AddMemberActivity.class);
+                            i.putExtra("teamId", teamId);
+                            startActivity(i);
+                        }
+                        return true;
+                    } else if (id == R.id.action_delete_member) {
+                        if (!isTeamChat || teamId == null) {
+                            Toast.makeText(this, "Hãy mở team trước", Toast.LENGTH_SHORT).show();
+                            return true;
+                        }
+                        Intent i = new Intent(ChatActivity.this, RemoveMemberActivity.class);
+                        i.putExtra("teamId", teamId);
+                        startActivity(i);
+                        return true;
+                    } else if (id == R.id.action_open_team_by_name) {
+                        final EditText input = new EditText(ChatActivity.this);
+                        input.setHint("Nhập tên team");
+                        new AlertDialog.Builder(ChatActivity.this)
+                                .setTitle("Mở team theo tên")
+                                .setView(input)
+                                .setPositiveButton("Mở", (d, w) -> {
+                                    String name = input.getText().toString().trim();
+                                    if (!name.isEmpty()) openTeamByName(name);
+                                })
+                                .setNegativeButton("Hủy", null)
+                                .show();
+                        return true;
                     }
                     return false;
                 });
                 popup.show();
             });
         }
+    }
+
+    /** Xử lý sau khi load document user theo docId = uid; nếu không có, fallback tìm theo field "uid" */
+    private void handleUserDocLoaded(DocumentSnapshot doc, String expectedUid) {
+        if (doc.exists()) {
+            Users u = doc.toObject(Users.class);
+            if (u != null) {
+                if (u.getUid() == null || u.getUid().isEmpty()) {
+                    u.setUid(doc.getId()); // ✅ gán UID từ docId (chuỗi)
+                }
+                otherUser = u;
+                bindOtherUserHeader();
+                initChatAfterHaveOther();
+                return;
+            }
+        }
+
+        // Fallback: uid KHÔNG phải docId → tìm theo field "uid"
+        FirebaseUtil.allUserCollectionReference()
+                .whereEqualTo("uid", expectedUid)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    if (!snap.isEmpty()) {
+                        Users u = snap.getDocuments().get(0).toObject(Users.class);
+                        if (u != null) {
+                            if (u.getUid() == null || u.getUid().isEmpty()) {
+                                u.setUid(expectedUid);
+                            }
+                            otherUser = u;
+                            bindOtherUserHeader();
+                            initChatAfterHaveOther();
+                            return;
+                        }
+                    }
+                    enterEmptyMode();
+                })
+                .addOnFailureListener(e -> enterEmptyMode());
+    }
+
+    // ====== TEAM open-by-name helpers ======
+    /** Mở team từ DocumentSnapshot (đã tìm thấy) */
+    private void openTeamByDoc(DocumentSnapshot d) {
+        String foundTeamId = d.getId();
+        String foundName = String.valueOf(d.get("name"));
+
+        isTeamChat = true;
+        teamId = foundTeamId;
+        otherUser = null;
+
+        otherUsername.setText(foundName != null ? foundName : "Team");
+        messageInput.setEnabled(true);
+        sendMessageBtn.setEnabled(true);
+
+        if (btnAddMember != null) btnAddMember.setVisibility(View.VISIBLE);
+        if (btnTeamMenu  != null) btnTeamMenu.setVisibility(View.VISIBLE);
+
+        setupTeamRecyclerView();
+        if (adapter != null) adapter.startListening();
+
+        saveLastTeam(teamId, (foundName != null ? foundName : "Team"));
+        restoredTeam = true;
+    }
+
+    /** Tìm team theo tên (ưu tiên name_lower nếu có; fallback exact name) */
+    private void openTeamByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            Toast.makeText(this, "Tên team trống", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String q = name.trim();
+
+        FirebaseUtil.teamsCollection()
+                .whereEqualTo("name_lower", q.toLowerCase(Locale.ROOT))
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    if (!snap.isEmpty()) {
+                        openTeamByDoc(snap.getDocuments().get(0));
+                    } else {
+                        openTeamByNameExactFallback(q);
+                    }
+                })
+                .addOnFailureListener(e -> openTeamByNameExactFallback(q));
+    }
+
+    /** Fallback: tìm exact theo field "name" (case-sensitive) */
+    private void openTeamByNameExactFallback(String q) {
+        FirebaseUtil.teamsCollection()
+                .whereEqualTo("name", q)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(snap2 -> {
+                    if (!snap2.isEmpty()) {
+                        openTeamByDoc(snap2.getDocuments().get(0));
+                    } else {
+                        Toast.makeText(this, "Không tìm thấy team: " + q, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e2 ->
+                        Toast.makeText(this, "Lỗi tìm team: " + e2.getMessage(), Toast.LENGTH_SHORT).show()
+                );
     }
 
     // ===== Team functions (full) =====
@@ -484,6 +643,7 @@ public class ChatActivity extends AppCompatActivity {
                     teamId = FirebaseUtil.teamsCollection().document().getId();
                     Map<String, Object> data = new HashMap<>();
                     data.put("name", name);
+                    data.put("name_lower", name.toLowerCase(Locale.ROOT)); // hỗ trợ tìm theo tên
                     data.put("ownerId", ownerId);
                     data.put("members", Arrays.asList(ownerId));
                     data.put("createdAt", Timestamp.now());
@@ -532,7 +692,9 @@ public class ChatActivity extends AppCompatActivity {
                     String name = input.getText().toString().trim();
                     if (name.isEmpty()) return;
                     FirebaseUtil.teamRef(teamId)
-                            .update("name", name, "updatedAt", Timestamp.now())
+                            .update("name", name,
+                                    "name_lower", name.toLowerCase(Locale.ROOT),
+                                    "updatedAt", Timestamp.now())
                             .addOnSuccessListener(v -> {
                                 otherUsername.setText(name);
                                 saveLastTeam(teamId, name); // cập nhật tên nhớ

@@ -42,12 +42,12 @@ public class FirebaseUtil {
         String userId = "guest_user";
 
         String uid = (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid() : "guest_user";
-        return FirebaseFirestore.getInstance().collection("users").document(uid);
+        return FirebaseFirestore.getInstance().collection("Users").document(uid);
     }
 
 
     public static CollectionReference allUserCollectionReference(){
-        return FirebaseFirestore.getInstance().collection("users");
+        return FirebaseFirestore.getInstance().collection("Users");
     }
 
     public static DocumentReference getChatroomReference(String chatroomId){
