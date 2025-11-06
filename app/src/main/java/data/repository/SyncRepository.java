@@ -61,4 +61,48 @@ public class SyncRepository {
                     );
         }
     }
+
+    // Inside SyncRepository.java
+    public void syncTasksToFirebase() {
+    }
+
+    public void syncTasksFromFirebase() {
+    }
+
+    public void syncMessagesToFirebase() {
+    }
+
+    public void syncMessagesFromFirebase() {
+    }
+
+    public void syncNotificationsToFirebase() {
+    }
+
+    public void syncNotificationsFromFirebase() {
+    }
+
+    public void syncUsersToFirebase() {
+    }
+
+    public void syncUsersFromFirebase() {
+    }
+
+    public void syncProjectMembersToFirebase() {
+    }
+
+    public void syncProjectMembersFromFirebase() {
+    }
+
+    public void syncTaskAssigneesToFirebase() {
+    }
+
+    public void syncTaskAssigneesFromFirebase() {
+    }
+
+    public void syncCalendarEventsToFirebase() {
+    }
+
+    public void syncCalendarEventsFromFirebase() {
+    }
+
 }

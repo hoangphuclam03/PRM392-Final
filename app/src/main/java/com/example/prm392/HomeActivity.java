@@ -5,6 +5,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.widget.Toolbar;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -23,9 +27,11 @@ import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import data.local.DBConnect;
 import data.repository.SyncRepository;
+import data.workers.SyncWorker;
 import models.Projects;
 
 public class HomeActivity extends AppCompatActivity {
@@ -47,8 +53,8 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // ---------------- Apply saved dark theme BEFORE super.onCreate ----------------
-        SharedPreferences prefs = getSharedPreferences("app_settings", MODE_PRIVATE);
-        boolean darkTheme = prefs.getBoolean("dark_theme", false);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean darkTheme = prefs.getBoolean(KEY_DARK_THEME, false);
         AppCompatDelegate.setDefaultNightMode(
                 darkTheme ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
         );
@@ -62,19 +68,31 @@ public class HomeActivity extends AppCompatActivity {
         DBConnect localDb = new DBConnect(this);
 
         // Optional: insert a test project locally BEFORE syncing
-        Projects localTest = new Projects();
-        localTest.setProjectId(1001);
-        localTest.setProjectName("Offline Project Test");
-        localTest.setDescription("Created locally on device");
-        localTest.setCreatedBy(1);
-        localTest.setCreatedAt("2025-11-05");
-        localDb.insertOrUpdateProject(localTest);
-        Log.d("HOME", "Inserted local test project for sync verification");
+        //Projects localTest = new Projects();
+        //localTest.setProjectId(1001);
+        //localTest.setProjectName("Offline Project Test");
+        //localTest.setDescription("Created locally on device");
+        //localTest.setCreatedBy(1);
+        //localTest.setCreatedAt("2025-11-05");
+        //localDb.insertOrUpdateProject(localTest);
+        //Log.d("HOME", "Inserted local test project for sync verification");
 
-        // Run sync tests (SQLite → Firebase → SQLite)
+        // ---------------- Run initial sync (SQLite → Firebase → SQLite) ----------------
         SyncRepository syncRepo = new SyncRepository(this);
         syncRepo.syncProjectsToFirebase();
         syncRepo.syncProjectsFromFirebase();
+
+        // ---------------- Schedule periodic background sync with WorkManager ----------------
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+
+        PeriodicWorkRequest syncWorkRequest = new PeriodicWorkRequest.Builder(SyncWorker.class, 15, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(syncWorkRequest);
+        Log.d("HOME", "Periodic WorkManager sync scheduled every 15 minutes");
 
         // ---------------- Map UI ----------------
         tvWelcome = findViewById(R.id.tvWelcome);
@@ -130,8 +148,8 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        SharedPreferences prefs = getSharedPreferences("app_settings", MODE_PRIVATE);
-        boolean darkTheme = prefs.getBoolean("dark_theme", false);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean darkTheme = prefs.getBoolean(KEY_DARK_THEME, false);
 
         int currentMode = getResources().getConfiguration().uiMode &
                 android.content.res.Configuration.UI_MODE_NIGHT_MASK;
