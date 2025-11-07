@@ -115,6 +115,25 @@
             android:elevation="4dp"
             android:hint="@string/hint_write_message"
             android:padding="10dp" />
+        <TextView
+            android:id="@+id/tv_sender_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textColor="#555555"
+            android:textSize="12sp"
+            android:visibility="gone"
+            android:paddingBottom="2dp"/>
+
+        <!-- Bong bóng tin nhắn cũ của bạn -->
+        <!-- ví dụ: -->
+        <TextView
+            android:id="@+id/tv_message_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_message_out"
+            android:padding="10dp"
+            android:text="sample"/>
     </RelativeLayout>
 
 </RelativeLayout>
