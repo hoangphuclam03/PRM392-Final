@@ -39,6 +39,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".CreateManagingProjectActivity" android:exported="false" />
+
 
         <service
             android:name=".FCMNotificationService"

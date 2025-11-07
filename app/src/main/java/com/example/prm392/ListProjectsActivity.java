@@ -67,8 +67,9 @@ public class ListProjectsActivity extends AppCompatActivity {
         loadProjects();
 
         fabAdd.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreateProjectActivity.class);
+            Intent intent = new Intent(this, CreateManagingProjectActivity.class);
             startActivity(intent);
+
         });
 
         // ---------------- XỬ LÝ MENU BÊN TRÁI ----------------
