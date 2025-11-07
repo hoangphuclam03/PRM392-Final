@@ -19,10 +19,8 @@ import com.google.firebase.firestore.SetOptions;
 import java.util.HashMap;
 import java.util.Map;
 
-import data.sync.SyncScheduler;
 
 public class MainActivity extends AppCompatActivity {
-    private SyncScheduler syncScheduler;
     private EditText edtEmail, edtPassword;
     private Button btnLogin, btnRegister;
     private FirebaseAuth mAuth;
@@ -51,9 +49,6 @@ public class MainActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // 🔹 Start background synchronization
-        syncScheduler = new SyncScheduler(this);
-        syncScheduler.start();
 
         // 🔹 Buttons
         btnRegister.setOnClickListener(v -> {
@@ -115,19 +110,13 @@ public class MainActivity extends AppCompatActivity {
             finish();
         }
 
-        // 🔹 Resume background sync when activity visible
-        if (syncScheduler != null) {
-            syncScheduler.start();
-        }
+
     }
 
     @Override
     protected void onStop() {
         super.onStop();
 
-        // 🔹 Stop sync when activity is hidden to save battery
-        if (syncScheduler != null) {
-            syncScheduler.stop();
-        }
+
     }
 }

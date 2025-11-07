@@ -31,8 +31,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import data.local.DBConnect;
-import data.repository.SyncRepository;
-import data.workers.SyncWorker;
+
+import com.example.prm392.data.repository.SyncRepository;
+import com.example.prm392.data.workers.SyncWorker;
 import models.Projects;
 
 public class HomeActivity extends AppCompatActivity {
@@ -80,8 +81,8 @@ public class HomeActivity extends AppCompatActivity {
 
         // ---------------- Run initial sync (SQLite → Firebase → SQLite) ----------------
         SyncRepository syncRepo = new SyncRepository(this);
-        syncRepo.syncProjectsToFirebase();
-        syncRepo.syncProjectsFromFirebase();
+        syncRepo.syncProjectsToFirestore();
+        syncRepo.syncProjectsFromFirestore();
 
         // ---------------- Schedule periodic background sync with WorkManager ----------------
         Constraints constraints = new Constraints.Builder()

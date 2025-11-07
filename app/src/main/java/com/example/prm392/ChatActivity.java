@@ -3,6 +3,7 @@ package com.example.prm392;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -183,7 +184,7 @@ public class ChatActivity extends AppCompatActivity {
 
     // ===== RecyclerView setups =====
     private void setupPrivateRecyclerView() {
-        Query query = FirebaseUtil.getChatroomMessageReference(chatroomId)
+        Query query = FirebaseUtil.chatroomMessagesRef(chatroomId)
                 .orderBy("timestamp", Query.Direction.DESCENDING);
 
         FirestoreRecyclerOptions<ChatMessageModel> options =
@@ -209,7 +210,7 @@ public class ChatActivity extends AppCompatActivity {
     private void setupTeamRecyclerView() {
         if (teamId == null) return;
 
-        Query q = FirebaseUtil.teamMessageRef(teamId)
+        Query q = FirebaseUtil.teamMessagesRef(teamId)
                 .orderBy("timestamp", Query.Direction.DESCENDING);
 
         FirestoreRecyclerOptions<ChatMessageModel> options =
@@ -257,7 +258,7 @@ public class ChatActivity extends AppCompatActivity {
                 return;
             }
             ChatMessageModel chatMessageModel = new ChatMessageModel(message, myUid, Timestamp.now());
-            FirebaseUtil.teamMessageRef(teamId)
+            FirebaseUtil.teamMessagesRef(teamId)
                     .add(chatMessageModel)
                     .addOnSuccessListener(ref -> {
                         FirebaseUtil.teamRef(teamId).update(
@@ -292,10 +293,10 @@ public class ChatActivity extends AppCompatActivity {
         chatroomModel.setLastMessageTimestamp(Timestamp.now());
         chatroomModel.setLastMessageSenderId(myUid);
         chatroomModel.setLastMessage(message);
-        FirebaseUtil.getChatroomReference(chatroomId).set(chatroomModel);
+        FirebaseUtil.chatroomRef(chatroomId).set(chatroomModel);
 
         ChatMessageModel chatMessageModel = new ChatMessageModel(message, myUid, Timestamp.now());
-        FirebaseUtil.getChatroomMessageReference(chatroomId)
+        FirebaseUtil.chatroomMessagesRef(chatroomId)
                 .add(chatMessageModel)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -307,7 +308,7 @@ public class ChatActivity extends AppCompatActivity {
 
     // ===== Private chatroom bootstrap =====
     private void getOrCreateChatroomModel() {
-        FirebaseUtil.getChatroomReference(chatroomId).get()
+        FirebaseUtil.chatroomRef(chatroomId).get()
                 .addOnSuccessListener(snap -> {
                     chatroomModel = snap.toObject(ChatroomModel.class);
                     if (chatroomModel == null) {
@@ -320,7 +321,7 @@ public class ChatActivity extends AppCompatActivity {
                                 Timestamp.now(),
                                 ""
                         );
-                        FirebaseUtil.getChatroomReference(chatroomId).set(chatroomModel);
+                        FirebaseUtil.chatroomRef(chatroomId).set(chatroomModel);
                     }
                 });
     }
@@ -439,7 +440,7 @@ public class ChatActivity extends AppCompatActivity {
                 final String otherUid = otherUidFromIntent.trim();
 
                 // docId == uid (khuyến nghị)
-                FirebaseUtil.allUserCollectionReference()
+                FirebaseUtil.usersCollection()
                         .document(otherUid)
                         .get()
                         .addOnSuccessListener(doc -> handleUserDocLoaded(doc, otherUid))
@@ -473,7 +474,7 @@ public class ChatActivity extends AppCompatActivity {
 
         if (btnTeamMenu != null) {
             btnTeamMenu.setOnClickListener(v -> {
-                PopupMenu popup = new PopupMenu(ChatActivity.this, v, android.view.Gravity.END);
+                PopupMenu popup = new PopupMenu(ChatActivity.this, v, Gravity.END);
                 popup.getMenuInflater().inflate(R.menu.menu_team, popup.getMenu());
                 popup.setOnMenuItemClickListener(item -> {
                     int id = item.getItemId();
@@ -548,7 +549,7 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         // Fallback: uid KHÔNG phải docId → tìm theo field "uid"
-        FirebaseUtil.allUserCollectionReference()
+        FirebaseUtil.usersCollection()
                 .whereEqualTo("uid", expectedUid)
                 .limit(1)
                 .get()

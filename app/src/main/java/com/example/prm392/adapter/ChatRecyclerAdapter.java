@@ -103,14 +103,14 @@ public class ChatRecyclerAdapter extends FirestoreRecyclerAdapter<ChatMessageMod
 
         // Chưa có -> lấy từ Firestore
         // Ưu tiên docId == uid
-        FirebaseUtil.allUserCollectionReference()
+        FirebaseUtil.usersCollection()
                 .document(senderId)
                 .get()
                 .addOnSuccessListener(doc -> {
                     String dn = extractDisplayName(doc);
                     if (dn == null) {
                         // Fallback whereEqualTo("uid", senderId)
-                        FirebaseUtil.allUserCollectionReference()
+                        FirebaseUtil.usersCollection()
                                 .whereEqualTo("uid", senderId)
                                 .limit(1)
                                 .get()

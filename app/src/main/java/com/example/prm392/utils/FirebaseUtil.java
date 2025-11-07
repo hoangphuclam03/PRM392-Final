@@ -11,100 +11,126 @@ import com.google.firebase.storage.StorageReference;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
+/**
+ * Unified Firebase utility helper
+ * Supports: Auth, Firestore (Users, Projects, Tasks, Teams, Chatrooms), and Storage.
+ */
 public class FirebaseUtil {
-    public static CollectionReference teamsCollection() {
-        return FirebaseFirestore.getInstance().collection("teams");
+
+    // ------------------------- 🔐 AUTH + FIRESTORE CORE -------------------------
+    private static final FirebaseAuth auth = FirebaseAuth.getInstance();
+    private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+    public static FirebaseAuth getAuth() {
+        return auth;
     }
 
-    // Lấy document ref của team theo id
+    public static FirebaseFirestore getDatabase() {
+        return db;
+    }
+
+    // ------------------------- 👥 USERS -------------------------
+    public static CollectionReference usersCollection() {
+        return db.collection("Users");
+    }
+
+    public static DocumentReference currentUserDetails() {
+        String uid = (auth.getCurrentUser() != null)
+                ? auth.getCurrentUser().getUid()
+                : "guest_user";
+        return usersCollection().document(uid);
+    }
+
+    public static String currentUserId() {
+        return (auth.getCurrentUser() != null)
+                ? auth.getCurrentUser().getUid()
+                : "guest_user";
+    }
+
+    public static boolean isLoggedIn() {
+        return auth.getCurrentUser() != null;
+    }
+
+    public static void logout() {
+        auth.signOut();
+    }
+
+    // ------------------------- 🗂️ PROJECTS -------------------------
+    public static CollectionReference projectsCollection() {
+        return db.collection("Projects");
+    }
+
+    public static DocumentReference projectRef(String projectId) {
+        return projectsCollection().document(projectId);
+    }
+
+    // ------------------------- ✅ TASKS -------------------------
+    public static CollectionReference tasksCollection() {
+        return db.collection("Tasks");
+    }
+
+    public static DocumentReference taskRef(String taskId) {
+        return tasksCollection().document(taskId);
+    }
+
+    // ------------------------- 🧑‍🤝‍🧑 TEAMS -------------------------
+    public static CollectionReference teamsCollection() {
+        return db.collection("teams");
+    }
+
     public static DocumentReference teamRef(String teamId) {
         return teamsCollection().document(teamId);
     }
 
-    // Subcollection "messages" của 1 team
-    public static CollectionReference teamMessageRef(String teamId) {
+    public static CollectionReference teamMessagesRef(String teamId) {
         return teamRef(teamId).collection("messages");
     }
 
-    public static String currentUserId(){
-        return FirebaseAuth.getInstance().getUid();
+    // ------------------------- 💬 CHATROOMS -------------------------
+    public static CollectionReference allChatroomsCollection() {
+        return db.collection("chatrooms");
     }
 
-    public static boolean isLoggedIn(){
-        if(currentUserId()!=null){
-            return true;
-        }
-        return false;
+    public static DocumentReference chatroomRef(String chatroomId) {
+        return allChatroomsCollection().document(chatroomId);
     }
 
-    public static DocumentReference currentUserDetails() {
-        // Fake user ID since login is removed
-        String userId = "guest_user";
-
-        String uid = (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid() : "guest_user";
-        return FirebaseFirestore.getInstance().collection("Users").document(uid);
+    public static CollectionReference chatroomMessagesRef(String chatroomId) {
+        return chatroomRef(chatroomId).collection("chats");
     }
 
-
-    public static CollectionReference allUserCollectionReference(){
-        return FirebaseFirestore.getInstance().collection("Users");
+    public static String getChatroomId(String userId1, String userId2) {
+        // Deterministic ID regardless of sender/receiver order
+        return (userId1.hashCode() < userId2.hashCode())
+                ? userId1 + "_" + userId2
+                : userId2 + "_" + userId1;
     }
 
-    public static DocumentReference getChatroomReference(String chatroomId){
-        return FirebaseFirestore.getInstance().collection("chatrooms").document(chatroomId);
-    }
-
-    public static CollectionReference getChatroomMessageReference(String chatroomId){
-        return getChatroomReference(chatroomId).collection("chats");
-    }
-
-    public static String getChatroomId(String userId1,String userId2){
-        if(userId1.hashCode()<userId2.hashCode()){
-            return userId1+"_"+userId2;
-        }else{
-            return userId2+"_"+userId1;
+    public static DocumentReference getOtherUserFromChatroom(List<String> userIds) {
+        if (userIds.get(0).equals(currentUserId())) {
+            return usersCollection().document(userIds.get(1));
+        } else {
+            return usersCollection().document(userIds.get(0));
         }
     }
 
-    public static CollectionReference allChatroomCollectionReference(){
-        return FirebaseFirestore.getInstance().collection("chatrooms");
+    // ------------------------- 📸 STORAGE -------------------------
+    public static StorageReference getCurrentProfilePicStorageRef() {
+        return FirebaseStorage.getInstance()
+                .getReference()
+                .child("profile_pic")
+                .child(currentUserId());
     }
 
-    public static DocumentReference getOtherUserFromChatroom(List<String> userIds){
-        if(userIds.get(0).equals(FirebaseUtil.currentUserId())){
-            return allUserCollectionReference().document(userIds.get(1));
-        }else{
-            return allUserCollectionReference().document(userIds.get(0));
-        }
-    }
-
-    public static String timestampToString(Timestamp timestamp){
-        return new SimpleDateFormat("HH:MM").format(timestamp.toDate());
-    }
-
-    public static void logout(){
-        FirebaseAuth.getInstance().signOut();
-    }
-
-    public static StorageReference  getCurrentProfilePicStorageRef(){
-        return FirebaseStorage.getInstance().getReference().child("profile_pic")
-                .child(FirebaseUtil.currentUserId());
-    }
-
-    public static StorageReference  getOtherProfilePicStorageRef(String otherUserId){
-        return FirebaseStorage.getInstance().getReference().child("profile_pic")
+    public static StorageReference getOtherProfilePicStorageRef(String otherUserId) {
+        return FirebaseStorage.getInstance()
+                .getReference()
+                .child("profile_pic")
                 .child(otherUserId);
     }
 
-
+    // ------------------------- 🕓 UTILS -------------------------
+    public static String timestampToString(Timestamp timestamp) {
+        return new SimpleDateFormat("HH:mm").format(timestamp.toDate());
+    }
 }
-
-
-
-
-
-
-
-
-
-

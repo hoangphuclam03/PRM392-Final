@@ -25,8 +25,8 @@ public class DBConnect extends SQLiteOpenHelper {
     private static final int dbVersion = 2;
 
     // USERS table
-    private static final String USERS_TABLE = "users";
-    private static final String COL_ID = "id";
+    private static final String USERS_TABLE = "Users";
+    private static final String COL_UID = "Uid";
     private static final String COL_FIRST_NAME = "firstName";
     private static final String COL_LAST_NAME = "lastName";
     private static final String COL_EMAIL = "email";
@@ -40,7 +40,7 @@ public class DBConnect extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         // USERS
         String usersQuery = "CREATE TABLE " + USERS_TABLE + " (" +
-                COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COL_UID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COL_FIRST_NAME + " TEXT NOT NULL, " +
                 COL_LAST_NAME + " TEXT NOT NULL, " +
                 COL_EMAIL + " TEXT UNIQUE NOT NULL, " +

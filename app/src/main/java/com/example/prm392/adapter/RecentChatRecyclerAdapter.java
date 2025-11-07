@@ -57,7 +57,7 @@ public class RecentChatRecyclerAdapter
 
         final String otherIdFinal = otherId; // ✅ quan trọng
 
-        FirebaseUtil.allUserCollectionReference()
+        FirebaseUtil.usersCollection()
                 .whereEqualTo("id", Integer.parseInt(otherIdFinal))
                 .limit(1)
                 .get()
