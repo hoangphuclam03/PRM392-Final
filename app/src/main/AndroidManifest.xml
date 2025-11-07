@@ -22,6 +22,9 @@
             android:name=".ChatActivity"
             android:exported="false" /> <!-- ✅ Màn hình chính sau khi login -->
         <activity
+            android:name=".ListProjectsActivity"
+            android:exported="false" />
+        <activity
             android:name=".HomeActivity"
             android:exported="true" /> <!-- Màn hình đăng ký -->
         <activity

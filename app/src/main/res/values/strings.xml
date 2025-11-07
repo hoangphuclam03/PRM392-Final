@@ -10,6 +10,9 @@
     <string name="switch_12h">12h</string>
     <string name="switch_24h">24h</string>
     <string name="switch_time">24h / 12h Time Format</string>
+    <!-- Projects Activity -->
+    <string name="title_projects">Projects</string>
+
 
     <!-- Navigation Drawer -->
     <string name="nav_home">Home</string>

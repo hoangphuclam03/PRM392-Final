@@ -137,6 +137,8 @@ public class HomeActivity extends AppCompatActivity {
                 tvWelcome.setText("Bạn đang ở: Hồ sơ cá nhân");
             } else if (id == R.id.nav_chat) {
                 startActivity(new Intent(HomeActivity.this, ChatActivity.class));
+            } else if (id == R.id.nav_project) {
+                startActivity(new Intent(HomeActivity.this, ListProjectsActivity.class));
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
                 drawerLayout.closeDrawers();
