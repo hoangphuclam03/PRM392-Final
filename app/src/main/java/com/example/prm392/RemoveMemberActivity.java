@@ -128,7 +128,7 @@ public class RemoveMemberActivity extends AppCompatActivity {
         List<String> part = all.subList(start, end);
         Log.d(TAG, "fetchBatchByDocId " + start + " - " + (end - 1) + " | part=" + part);
 
-        FirebaseUtil.allUserCollectionReference()
+        FirebaseUtil.usersCollection()
                 .whereIn(FieldPath.documentId(), part)
                 .get()
                 .addOnSuccessListener(snap -> {

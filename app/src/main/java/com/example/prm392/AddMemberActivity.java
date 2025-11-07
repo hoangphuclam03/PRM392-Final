@@ -4,7 +4,10 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,6 +23,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 public class AddMemberActivity extends AppCompatActivity {
     private static final String TAG = "TEAM_ADD";
@@ -36,7 +40,7 @@ public class AddMemberActivity extends AppCompatActivity {
         setTitle("Thêm thành viên");
 
         // nút back
-        android.widget.ImageButton back = findViewById(R.id.back_btn);
+        ImageButton back = findViewById(R.id.back_btn);
         if (back != null) back.setOnClickListener(v -> finish());
 
         teamId = getIntent().getStringExtra("teamId");
@@ -65,8 +69,10 @@ public class AddMemberActivity extends AppCompatActivity {
                 });
             }
 
-            @NonNull @Override public VH onCreateViewHolder(@NonNull android.view.ViewGroup p, int vt) {
-                android.view.View v = getLayoutInflater().inflate(R.layout.search_user_recycler_row, p, false);
+            @NonNull
+            @Override
+            public VH onCreateViewHolder(@NonNull ViewGroup p, int vt) {
+                View v = getLayoutInflater().inflate(R.layout.search_user_recycler_row, p, false);
                 return new VH(v);
             }
 
@@ -82,12 +88,12 @@ public class AddMemberActivity extends AppCompatActivity {
         rv.setAdapter(adapter);
 
         // DEBUG: In 5 user đầu để kiểm tra field email/email_lower
-        FirebaseUtil.allUserCollectionReference()
+        FirebaseUtil.usersCollection()
                 .limit(5)
                 .get()
                 .addOnSuccessListener(snap -> {
                     Log.d(TAG, "users top5 count = " + snap.size());
-                    for (com.google.firebase.firestore.QueryDocumentSnapshot d : snap) {
+                    for (QueryDocumentSnapshot d : snap) {
                         Object e = d.get("email");
                         Object el = d.get("email_lower");
                         Log.d(TAG, "docId=" + d.getId() + " email=" + e + " | email_lower=" + el);
@@ -127,20 +133,20 @@ public class AddMemberActivity extends AppCompatActivity {
 
         // Chưa gõ gì → liệt kê theo email
         if (key.isEmpty()) {
-            return FirebaseUtil.allUserCollectionReference()
+            return FirebaseUtil.usersCollection()
                     .orderBy("email")            // 🔁 dùng email
                     .limit(50);
         }
 
         // Có '@' → ưu tiên exact match
         if (key.contains("@")) {
-            return FirebaseUtil.allUserCollectionReference()
+            return FirebaseUtil.usersCollection()
                     .whereEqualTo("email", keyLower) // exact trên email (thường là lowercase)
                     .limit(50);
         }
 
         // Prefix search theo email (a, ab, abc…)
-        return FirebaseUtil.allUserCollectionReference()
+        return FirebaseUtil.usersCollection()
                 .orderBy("email")
                 .startAt(keyLower)
                 .endAt(keyLower + "\uf8ff")

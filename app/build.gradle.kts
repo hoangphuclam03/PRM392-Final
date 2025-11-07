@@ -65,7 +65,13 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime)
     implementation(libs.material.calendarview)
-    implementation("com.jakewharton.threetenabp:threetenabp:1.3.1")
+    implementation(libs.threetenabp)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    implementation(libs.room.ktx)
+
+// Lifecycle ViewModel (for repository usage)
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.8.0")
 
     // Testing
     testImplementation(libs.junit)
