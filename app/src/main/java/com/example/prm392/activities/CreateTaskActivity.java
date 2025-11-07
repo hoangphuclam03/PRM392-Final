@@ -1,5 +1,6 @@
 package com.example.prm392.activities;
 
+import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.View;
@@ -73,6 +74,7 @@ public class CreateTaskActivity extends AppCompatActivity {
         setupListeners();
     }
 
+    @SuppressLint("WrongViewCast")
     private void initViews() {
         spinnerProject = findViewById(R.id.spinnerProject);
         etTaskTitle = findViewById(R.id.etTaskTitle);
