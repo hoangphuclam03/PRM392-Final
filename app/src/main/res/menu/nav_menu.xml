@@ -10,6 +10,9 @@
         android:id="@+id/nav_chat"
         android:title="Chat" />
     <item
+        android:id="@+id/nav_project"
+        android:title="Project" />
+    <item
         android:id="@+id/nav_settings"
         android:title="Cài đặt" />
     <item
