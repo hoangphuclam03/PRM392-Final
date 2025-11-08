@@ -1,31 +1,39 @@
 package com.example.prm392.adapter;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.prm392.models.ProjectEntity;
 import com.example.prm392.R;
+import com.example.prm392.models.ProjectEntity;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ViewHolder> {
 
-    public interface OnProjectClickListener {
-        void onProjectClick(ProjectEntity project);
-    }
+    private final List<ProjectEntity> projects;
+    private final String currentUserId;
+    private final Consumer<ProjectEntity> onItemClick;
+    private final Consumer<ProjectEntity> onEditClick;
+    private final Consumer<ProjectEntity> onDeleteClick;
 
-    private List<ProjectEntity> projectList;
-    private OnProjectClickListener listener;
-
-    public ProjectAdapter(List<ProjectEntity> projectList, OnProjectClickListener listener) {
-        this.projectList = (projectList != null) ? projectList : new ArrayList<>();
-        this.listener = listener;
+    public ProjectAdapter(List<ProjectEntity> projects,
+                          String currentUserId,
+                          Consumer<ProjectEntity> onItemClick,
+                          Consumer<ProjectEntity> onEditClick,
+                          Consumer<ProjectEntity> onDeleteClick) {
+        this.projects = projects;
+        this.currentUserId = currentUserId;
+        this.onItemClick = onItemClick;
+        this.onEditClick = onEditClick;
+        this.onDeleteClick = onDeleteClick;
     }
 
     @NonNull
@@ -38,27 +46,50 @@ public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        ProjectEntity project = projectList.get(position);
-        holder.txtProjectName.setText(project.projectName != null ? project.projectName : "(No name)");
-        holder.txtDescription.setText(project.description != null ? project.description : "(No description)");
+        ProjectEntity project = projects.get(position);
 
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onProjectClick(project);
-        });
+        holder.tvName.setText(project.projectName);
+        holder.tvDescription.setText(project.description);
+
+        // ✅ Hiển thị trạng thái Public / Private
+        if (project.isPublic) {
+            holder.tvVisibility.setText("Public");
+            holder.tvVisibility.setTextColor(Color.parseColor("#2E7D32")); // xanh lá
+        } else {
+            holder.tvVisibility.setText("Private");
+            holder.tvVisibility.setTextColor(Color.parseColor("#C62828")); // đỏ
+        }
+
+        // ✅ Chỉ cho phép owner được Edit/Delete
+        if (!project.ownerId.equals(currentUserId)) {
+            holder.btnEdit.setVisibility(View.GONE);
+            holder.btnDelete.setVisibility(View.GONE);
+        } else {
+            holder.btnEdit.setVisibility(View.VISIBLE);
+            holder.btnDelete.setVisibility(View.VISIBLE);
+        }
+
+        holder.itemView.setOnClickListener(v -> onItemClick.accept(project));
+        holder.btnEdit.setOnClickListener(v -> onEditClick.accept(project));
+        holder.btnDelete.setOnClickListener(v -> onDeleteClick.accept(project));
     }
 
     @Override
     public int getItemCount() {
-        return projectList != null ? projectList.size() : 0;
+        return projects.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView txtProjectName, txtDescription;
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView tvName, tvDescription, tvVisibility;
+        Button btnEdit, btnDelete;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            txtProjectName = itemView.findViewById(R.id.txtProjectName);
-            txtDescription = itemView.findViewById(R.id.txtProjectDesc);
+            tvName = itemView.findViewById(R.id.tvProjectName);
+            tvDescription = itemView.findViewById(R.id.tvProjectDescription);
+            tvVisibility = itemView.findViewById(R.id.tvProjectVisibility);
+            btnEdit = itemView.findViewById(R.id.btnEdit);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
         }
     }
 }
