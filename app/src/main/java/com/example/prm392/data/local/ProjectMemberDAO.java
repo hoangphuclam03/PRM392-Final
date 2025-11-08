@@ -4,7 +4,6 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
-import androidx.room.Update;
 
 import com.example.prm392.models.ProjectMemberEntity;
 
@@ -13,22 +12,30 @@ import java.util.List;
 @Dao
 public interface ProjectMemberDAO {
 
-    // ✅ projectId is a String (matches your entity)
-    @Query("SELECT * FROM project_members WHERE projectId = :projectId")
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertOrUpdate(ProjectMemberEntity member);
+
+    @Query("SELECT * FROM project_members WHERE projectId = :projectId ORDER BY fullName ASC")
     List<ProjectMemberEntity> getMembersByProject(String projectId);
 
-    @Query("SELECT * FROM project_members WHERE projectId = :projectId AND userId = :userId LIMIT 1")
-    ProjectMemberEntity findMemberInProject(String projectId, String userId);
+    @Query("SELECT * FROM project_members WHERE userId = :userId")
+    List<ProjectMemberEntity> getMembershipsByUser(String userId);
 
+    @Query("DELETE FROM project_members WHERE projectId = :projectId AND userId = :userId")
+    void removeMember(String projectId, String userId);
+
+    @Query("DELETE FROM project_members")
+    void clearAll();
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(ProjectMemberEntity member);
 
-    @Query("SELECT * FROM project_members WHERE userId = :userId")
-    List<ProjectMemberEntity> getMembersByUser(String userId);
+    @Query("SELECT * FROM project_members WHERE pendingSync = 1")
+    List<ProjectMemberEntity> getPendingMembers();
 
-    @Update
-    void update(ProjectMemberEntity member);
+    @Query("UPDATE project_members SET pendingSync = 0 WHERE memberId = :memberId")
+    void markSynced(String memberId);
 
-    @Query("DELETE FROM project_members WHERE projectId = :projectId")
+    @Query("DELETE FROM project_members WHERE projectId=:projectId")
     void deleteByProject(String projectId);
+
 }

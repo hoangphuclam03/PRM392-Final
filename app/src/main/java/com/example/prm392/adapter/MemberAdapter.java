@@ -45,8 +45,8 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.MemberView
 
         // Display name or fallback
         holder.txtName.setText(
-                (member.name != null && !member.name.isEmpty())
-                        ? member.name
+                (member.fullName != null && !member.fullName.isEmpty())
+                        ? member.fullName
                         : "Không có tên"
         );
 

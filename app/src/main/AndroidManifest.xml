@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Quyền truy cập Internet -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -11,38 +13,50 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PRM392"
-        android:name=".MyApp">
-        <activity
-            android:name=".activities.CalendarEventsActivity"
-            android:exported="false" />
-        <activity android:name=".activities.TeamListActivity" />
-        <activity
-            android:name=".activities.ChatActivity"
-            android:exported="false" /> <!-- ✅ Màn hình chính sau khi login -->
-        <activity
-            android:name=".activities.ListYourProjectsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.HomeActivity"
-            android:exported="true" /> <!-- Màn hình đăng ký -->
-        <activity
-            android:name=".activities.RegisterActivity"
-            android:exported="false" /> <!-- Màn hình đăng nhập -->
+        android:theme="@style/Theme.PRM392">
+
+        <!-- 🔹 Activity mặc định (launcher) -->
         <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 🔹 Trang Home chính sau khi đăng nhập -->
         <activity
-            android:name=".activities.CreateManagingProjectActivity"
+            android:name=".activities.HomeActivity"
+            android:exported="true" />
+
+        <!-- 🔹 Các màn chức năng chính -->
+        <activity
+            android:name=".activities.ChatActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.CalendarEventsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.AddMemberActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.SettingsActivity"
             android:exported="false" />
 
+        <!-- 🔹 Màn quản lý Projects -->
+        <activity
+            android:name=".activities.ListYourProjectsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.CreateProjectActivity"
+            android:exported="false" />
+        <activity android:name=".activities.EditProjectActivity" />
+        <activity
+            android:name=".activities.RegisterActivity"
+            android:exported="false" />
 
+        <!-- 🔹 Firebase Service -->
         <service
             android:name=".FCMNotificationService"
             android:exported="false">
@@ -51,17 +65,5 @@
             </intent-filter>
         </service>
 
-        <activity
-            android:name=".activities.AddMemberActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.RemoveMemberActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SettingsActivity"
-            android:exported="false" />
-
-
     </application>
-
 </manifest>
