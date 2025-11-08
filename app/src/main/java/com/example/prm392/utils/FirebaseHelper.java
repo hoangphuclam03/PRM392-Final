@@ -1,118 +1,210 @@
 package com.example.prm392.utils;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import android.content.Context;
+import android.os.AsyncTask;
 
-import models.TaskAssignees;
-import models.Tasks;
+import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.models.ChatEntity;
+import com.example.prm392.models.ProjectEntity;
+import com.example.prm392.models.ProjectMemberEntity;
+import com.example.prm392.models.TaskEntity;
+import com.example.prm392.models.UserEntity;
+
+import java.util.List;
 
 /**
- * Firebase Helper Class
- * Giúp đơn giản hóa các thao tác với Firebase
+ * Offline Replacement for FirebaseHelper using Room.
+ * Keeps the same public API (method names, callbacks),
+ * but all actions are done locally using DAOs.
  */
 public class FirebaseHelper {
 
     private static FirebaseHelper instance;
-    private DatabaseReference dbRef;
+    private final AppDatabase db;
 
-    private FirebaseHelper() {
-        dbRef = FirebaseDatabase.getInstance().getReference();
+    private FirebaseHelper(Context context) {
+        db = AppDatabase.getInstance(context.getApplicationContext());
     }
 
-    public static FirebaseHelper getInstance() {
+    public static synchronized FirebaseHelper getInstance(Context context) {
         if (instance == null) {
-            instance = new FirebaseHelper();
+            instance = new FirebaseHelper(context);
         }
         return instance;
     }
 
-    public DatabaseReference getReference() {
-        return dbRef;
+    // =====================================================================
+    // USERS
+    // =====================================================================
+
+    public void createUser(UserEntity user, OnSuccessListener listener) {
+        AsyncTask.execute(() -> {
+            try {
+                db.userDAO().insertOrUpdate(user);
+                if (listener != null) listener.onSuccess();
+            } catch (Exception e) {
+                if (listener != null) listener.onFailure(e.getMessage());
+            }
+        });
     }
 
-    // ============= TASKS =============
-
-    public DatabaseReference getTasksRef() {
-        return dbRef.child("tasks");
+    public void getUserByEmail(String email, OnDataLoadedListener<UserEntity> listener) {
+        AsyncTask.execute(() -> {
+            try {
+                UserEntity user = db.userDAO().getUserByEmail(email);
+                if (listener != null) listener.onDataLoaded(user);
+            } catch (Exception e) {
+                if (listener != null) listener.onError(e.getMessage());
+            }
+        });
     }
 
-    public DatabaseReference getTaskRef(int taskId) {
-        return dbRef.child("tasks").child(String.valueOf(taskId));
+    public void getAllUsers(OnDataLoadedListener<List<UserEntity>> listener) {
+        AsyncTask.execute(() -> {
+            try {
+                List<UserEntity> users = db.userDAO().getAllUsers();
+                if (listener != null) listener.onDataLoaded(users);
+            } catch (Exception e) {
+                if (listener != null) listener.onError(e.getMessage());
+            }
+        });
     }
 
-    public void createTask(Tasks task, OnSuccessListener listener) {
-        getTaskRef(task.getTaskId())
-                .setValue(task)
-                .addOnSuccessListener(aVoid -> {
-                    if (listener != null) listener.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    if (listener != null) listener.onFailure(e.getMessage());
-                });
+    // =====================================================================
+    // PROJECTS
+    // =====================================================================
+
+    public void createProject(ProjectEntity project, OnSuccessListener listener) {
+        AsyncTask.execute(() -> {
+            try {
+                db.projectDAO().insertOrUpdate(project);
+                if (listener != null) listener.onSuccess();
+            } catch (Exception e) {
+                if (listener != null) listener.onFailure(e.getMessage());
+            }
+        });
     }
 
-    public void updateTaskStatus(int taskId, String newStatus, OnSuccessListener listener) {
-        getTaskRef(taskId)
-                .child("status")
-                .setValue(newStatus)
-                .addOnSuccessListener(aVoid -> {
-                    if (listener != null) listener.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    if (listener != null) listener.onFailure(e.getMessage());
-                });
+    public void deleteProject(String projectId, OnSuccessListener listener) {
+        AsyncTask.execute(() -> {
+            try {
+                ProjectEntity p = db.projectDAO().getProjectById(projectId);
+                if (p != null) db.projectDAO().delete(p);
+                if (listener != null) listener.onSuccess();
+            } catch (Exception e) {
+                if (listener != null) listener.onFailure(e.getMessage());
+            }
+        });
     }
 
-    public void deleteTask(int taskId, OnSuccessListener listener) {
-        getTaskRef(taskId)
-                .removeValue()
-                .addOnSuccessListener(aVoid -> {
-                    if (listener != null) listener.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    if (listener != null) listener.onFailure(e.getMessage());
-                });
+    public void getAllProjects(OnDataLoadedListener<List<ProjectEntity>> listener) {
+        AsyncTask.execute(() -> {
+            try {
+                List<ProjectEntity> list = db.projectDAO().getAllProjects();
+                if (listener != null) listener.onDataLoaded(list);
+            } catch (Exception e) {
+                if (listener != null) listener.onError(e.getMessage());
+            }
+        });
     }
 
-    // ============= TASK ASSIGNEES =============
+    // =====================================================================
+    // PROJECT MEMBERS
+    // =====================================================================
 
-    public DatabaseReference getTaskAssigneesRef() {
-        return dbRef.child("task_assignees");
+    public void addProjectMember(ProjectMemberEntity member, OnSuccessListener listener) {
+        AsyncTask.execute(() -> {
+            try {
+                db.projectMemberDAO().insert(member);
+                if (listener != null) listener.onSuccess();
+            } catch (Exception e) {
+                if (listener != null) listener.onFailure(e.getMessage());
+            }
+        });
     }
 
-    public void assignUserToTask(TaskAssignees assignee, OnSuccessListener listener) {
-        getTaskAssigneesRef()
-                .child(String.valueOf(assignee.getId()))
-                .setValue(assignee)
-                .addOnSuccessListener(aVoid -> {
-                    if (listener != null) listener.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    if (listener != null) listener.onFailure(e.getMessage());
-                });
+    public void getMembersByProject(String projectId, OnDataLoadedListener<List<ProjectMemberEntity>> listener) {
+        AsyncTask.execute(() -> {
+            try {
+                List<ProjectMemberEntity> members = db.projectMemberDAO().getMembersByProject(projectId);
+                if (listener != null) listener.onDataLoaded(members);
+            } catch (Exception e) {
+                if (listener != null) listener.onError(e.getMessage());
+            }
+        });
     }
 
-    // ============= PROJECTS =============
+    // =====================================================================
+    // TASKS
+    // =====================================================================
 
-    public DatabaseReference getProjectsRef() {
-        return dbRef.child("projects");
+    public void createTask(TaskEntity task, OnSuccessListener listener) {
+        AsyncTask.execute(() -> {
+            try {
+                db.taskDAO().insertOrUpdate(task);
+                if (listener != null) listener.onSuccess();
+            } catch (Exception e) {
+                if (listener != null) listener.onFailure(e.getMessage());
+            }
+        });
     }
 
-    public DatabaseReference getProjectRef(int projectId) {
-        return dbRef.child("projects").child(String.valueOf(projectId));
+    public void updateTaskStatus(String taskId, String status, OnSuccessListener listener) {
+        AsyncTask.execute(() -> {
+            try {
+                db.taskDAO().updateTaskStatus(taskId, status);
+                if (listener != null) listener.onSuccess();
+            } catch (Exception e) {
+                if (listener != null) listener.onFailure(e.getMessage());
+            }
+        });
     }
 
-    // ============= USERS =============
-
-    public DatabaseReference getUsersRef() {
-        return dbRef.child("users");
+    public void getTasksByProject(String projectId, OnDataLoadedListener<List<TaskEntity>> listener) {
+        AsyncTask.execute(() -> {
+            try {
+                List<TaskEntity> list = db.taskDAO().getTasksByProject(projectId);
+                if (listener != null) listener.onDataLoaded(list);
+            } catch (Exception e) {
+                if (listener != null) listener.onError(e.getMessage());
+            }
+        });
     }
 
-    public DatabaseReference getUserRef(int userId) {
-        return dbRef.child("users").child(String.valueOf(userId));
+    // =====================================================================
+    // CHAT
+    // =====================================================================
+
+    public void saveChat(ChatEntity chat, OnSuccessListener listener) {
+        AsyncTask.execute(() -> {
+            try {
+                db.chatDAO().insert(chat);
+                if (listener != null) listener.onSuccess();
+            } catch (Exception e) {
+                if (listener != null) listener.onFailure(e.getMessage());
+            }
+        });
     }
 
-    // ============= CALLBACKS =============
+    public void getAllChats(OnDataLoadedListener<List<ChatEntity>> listener) {
+        AsyncTask.execute(() -> {
+            try {
+                List<ChatEntity> chats = db.chatDAO().getAllChats();
+                if (listener != null) listener.onDataLoaded(chats);
+            } catch (Exception e) {
+                if (listener != null) listener.onError(e.getMessage());
+            }
+        });
+    }
+
+    // =====================================================================
+    // NOTIFICATIONS
+    // =====================================================================
+
+
+    // =====================================================================
+    // CALLBACK INTERFACES
+    // =====================================================================
 
     public interface OnSuccessListener {
         void onSuccess();

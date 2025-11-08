@@ -16,4 +16,6 @@ public class TaskEntity {
     public String status;        // ToDo / InProgress / Done
     public String dueDate;
     public boolean isPendingSync; // true = waiting to sync
+    public boolean pendingSync = false;
+    public long lastSyncedAt = 0;
 }

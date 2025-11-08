@@ -13,5 +13,9 @@ public class ProjectEntity {
     public String description;
     public String createdBy;     // userId
     public String createdAt;
+    public String ownerId;   // to align with team logic
+    public long updatedAt;
     public boolean isPublic;
+    public boolean pendingSync = false;
+    public long lastSyncedAt = 0;
 }

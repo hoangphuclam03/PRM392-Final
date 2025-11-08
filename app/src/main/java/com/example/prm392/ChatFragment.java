@@ -10,65 +10,61 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.prm392.adapter.RecentChatRecyclerAdapter;
-import models.ChatroomModel;
+import com.example.prm392.adapter.ChatRecyclerAdapter;
+import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.data.local.ChatDAO;
+import com.example.prm392.models.ChatEntity;
 
-import com.example.prm392.utils.FirebaseUtil;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
-import com.google.firebase.firestore.Query;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public class ChatFragment extends Fragment {
 
-    RecyclerView recyclerView;
-    RecentChatRecyclerAdapter adapter;
-
+    private RecyclerView recyclerView;
+    private ChatRecyclerAdapter adapter;
+    private ChatDAO chatDAO;
 
     public ChatFragment() {
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view =  inflater.inflate(R.layout.fragment_chat, container, false);
+        View view = inflater.inflate(R.layout.fragment_chat, container, false);
+
         recyclerView = view.findViewById(R.id.recyler_view);
-        setupRecyclerView();
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        // Initialize DAO
+        chatDAO = AppDatabase.getInstance(getContext()).chatDAO();
+
+        // Initialize adapter (show sender names)
+        adapter = new ChatRecyclerAdapter(getContext(), true);
+        recyclerView.setAdapter(adapter);
+
+        loadChats();
 
         return view;
     }
 
-    void setupRecyclerView(){
+    private void loadChats() {
+        // Run DB query on background thread
+        ExecutorService executor = AppDatabase.databaseWriteExecutor;
+        executor.execute(() -> {
+            // Assuming you want all chats ordered by timestamp ASC
+            List<ChatEntity> chats = chatDAO.getByProject("team_project_id"); // replace with your actual projectId
 
-        Query query = FirebaseUtil.allChatroomsCollection()
-                .whereArrayContains("userIds",FirebaseUtil.currentUserId())
-                .orderBy("lastMessageTimestamp",Query.Direction.DESCENDING);
-
-        FirestoreRecyclerOptions<ChatroomModel> options = new FirestoreRecyclerOptions.Builder<ChatroomModel>()
-                .setQuery(query,ChatroomModel.class).build();
-
-        adapter = new RecentChatRecyclerAdapter(options,getContext());
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(adapter);
-        adapter.startListening();
-
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if(adapter!=null)
-            adapter.startListening();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if(adapter!=null)
-            adapter.stopListening();
+            // Update RecyclerView on UI thread
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> adapter.setChats(chats));
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if(adapter!=null)
-            adapter.notifyDataSetChanged();
+        // reload chats in case new ones were added locally
+        loadChats();
     }
 }

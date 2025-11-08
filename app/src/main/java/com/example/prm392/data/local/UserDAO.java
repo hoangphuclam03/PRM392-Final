@@ -17,9 +17,25 @@ public interface UserDAO {
     @Query("SELECT * FROM users ORDER BY fullName ASC")
     List<UserEntity> getAll();
 
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    UserEntity getUserByEmail(String email);
+
+    @Query("SELECT * FROM users ORDER BY lastLogin DESC")
+    List<UserEntity> getAllUsers();
+
+    @Query("SELECT * FROM users WHERE userId = :userId LIMIT 1")
+    UserEntity getUserById(String userId);
     @Query("SELECT * FROM users WHERE userId = :id LIMIT 1")
     UserEntity findById(String id);
 
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    UserEntity findByEmail(String email);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insert(UserEntity user);
+
+    @Query("DELETE FROM users WHERE userId = :userId")
+    void deleteUser(String userId);
     @Query("DELETE FROM users")
     void clearAll();
 }

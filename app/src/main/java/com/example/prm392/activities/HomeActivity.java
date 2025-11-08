@@ -1,24 +1,27 @@
-package com.example.prm392;
-
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.appcompat.widget.Toolbar;
-import androidx.work.Constraints;
-import androidx.work.NetworkType;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
+package com.example.prm392.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.Toast;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import com.example.prm392.R;
+import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.data.repository.SyncRepository;
+import com.example.prm392.data.workers.SyncWorker;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -28,13 +31,8 @@ import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import data.local.DBConnect;
-
-import com.example.prm392.data.repository.SyncRepository;
-import com.example.prm392.data.workers.SyncWorker;
-import models.Projects;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -47,6 +45,8 @@ public class HomeActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
+
+    private SyncRepository syncRepository;
 
     // SharedPreferences keys
     private static final String PREFS_NAME = "app_settings";
@@ -64,56 +64,15 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        // ---------------- Initialize Firebase + SQLite ----------------
+        // ---------------- Initialize Firebase ----------------
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        DBConnect localDb = new DBConnect(this);
 
-        // Optional: insert a test project locally BEFORE syncing
-        //Projects localTest = new Projects();
-        //localTest.setProjectId(1001);
-        //localTest.setProjectName("Offline Project Test");
-        //localTest.setDescription("Created locally on device");
-        //localTest.setCreatedBy(1);
-        //localTest.setCreatedAt("2025-11-05");
-        //localDb.insertOrUpdateProject(localTest);
-        //Log.d("HOME", "Inserted local test project for sync verification");
+        // ---------------- Setup UI ----------------
+        initUI();
+        setupNavigation();
 
-        // ---------------- Run initial sync (SQLite → Firebase → SQLite) ----------------
-        SyncRepository syncRepo = new SyncRepository(this);
-        syncRepo.syncProjectsToFirestore();
-        syncRepo.syncProjectsFromFirestore();
-
-        // ---------------- Schedule periodic background sync with WorkManager ----------------
-        Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build();
-
-        PeriodicWorkRequest syncWorkRequest = new PeriodicWorkRequest.Builder(SyncWorker.class, 15, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build();
-
-        WorkManager.getInstance(this).enqueue(syncWorkRequest);
-        Log.d("HOME", "Periodic WorkManager sync scheduled every 15 minutes");
-
-        // ---------------- Map UI ----------------
-        tvWelcome = findViewById(R.id.tvWelcome);
-        btnLogout = findViewById(R.id.btnLogout);
-        drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
-        toolbar = findViewById(R.id.toolbar);
-
-        setSupportActionBar(toolbar);
-
-        toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close
-        );
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-
-        // ---------------- Check logged-in user ----------------
+        // ---------------- Handle user session ----------------
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             loadUserInfo(user.getUid());
@@ -122,56 +81,101 @@ public class HomeActivity extends AppCompatActivity {
             Toast.makeText(this, "Không tìm thấy người dùng!", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, MainActivity.class));
             finish();
+            return;
         }
 
-        // ---------------- Logout button ----------------
+        // ---------------- Logout ----------------
         btnLogout.setOnClickListener(v -> logoutUser());
 
-        // ---------------- Navigation menu logic ----------------
-        navigationView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                // Recreate activity to apply theme in case changed
-                recreate();
-                drawerLayout.closeDrawers();
-            } else if (id == R.id.nav_profile) {
-                tvWelcome.setText("Bạn đang ở: Hồ sơ cá nhân");
-            } else if (id == R.id.nav_chat) {
-                startActivity(new Intent(HomeActivity.this, ChatActivity.class));
-            } else if (id == R.id.nav_project) {
-                startActivity(new Intent(HomeActivity.this, ListProjectsActivity.class));
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
-                drawerLayout.closeDrawers();
-            } else if (id == R.id.nav_logout) {
-                logoutUser();
-            } else if (id == R.id.nav_calendar) {  // <-- ID của mục “Lịch”
-            startActivity(new Intent(HomeActivity.this, CalendarEventsActivity.class));
-            drawerLayout.closeDrawers();
-            return true; // nhớ return true để sự kiện không bị rơi
-        }
+        // ---------------- Run heavy initialization asynchronously ----------------
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                // Room initialization (lazy loading)
+                AppDatabase.getInstance(getApplicationContext());
+                syncRepository = new SyncRepository(getApplicationContext());
 
-        drawerLayout.closeDrawers();
-            return true;
+                // Initial sync (Room ↔ Firestore)
+                syncRepository.syncAll();
+
+                // Schedule background sync
+                schedulePeriodicSync();
+                Log.d("HOME", "Initial and periodic sync scheduled successfully.");
+
+            } catch (Exception e) {
+                Log.e("HOME", "Background init failed: " + e.getMessage());
+            }
         });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean darkTheme = prefs.getBoolean(KEY_DARK_THEME, false);
-
         int currentMode = getResources().getConfiguration().uiMode &
                 android.content.res.Configuration.UI_MODE_NIGHT_MASK;
 
+        // Refresh activity if theme changed
         if ((darkTheme && currentMode != android.content.res.Configuration.UI_MODE_NIGHT_YES) ||
                 (!darkTheme && currentMode == android.content.res.Configuration.UI_MODE_NIGHT_YES)) {
-            recreate(); // refresh activity to apply theme
+            recreate();
+        }
+
+        // Trigger a lightweight sync when user returns
+        if (syncRepository != null) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                try {
+                    syncRepository.syncAll();
+                } catch (Exception e) {
+                    Log.e("HOME", "Sync on resume failed: " + e.getMessage());
+                }
+            });
         }
     }
 
-    // ---------------- Load user info from Firestore ----------------
+    // ---------------- UI Initialization ----------------
+    private void initUI() {
+        tvWelcome = findViewById(R.id.tvWelcome);
+        btnLogout = findViewById(R.id.btnLogout);
+        drawerLayout = findViewById(R.id.drawerLayout);
+        navigationView = findViewById(R.id.navigationView);
+        toolbar = findViewById(R.id.toolbar);
+
+        setSupportActionBar(toolbar);
+        toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close
+        );
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+    }
+
+    // ---------------- Navigation Setup ----------------
+    private void setupNavigation() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                recreate();
+            } else if (id == R.id.nav_profile) {
+                tvWelcome.setText("Bạn đang ở: Hồ sơ cá nhân");
+            } else if (id == R.id.nav_chat) {
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class));
+            } else if (id == R.id.nav_project) {
+                startActivity(new Intent(HomeActivity.this, ListYourProjectsActivity.class));
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+            } else if (id == R.id.nav_calendar) {
+                startActivity(new Intent(HomeActivity.this, CalendarEventsActivity.class));
+            } else if (id == R.id.nav_logout) {
+                logoutUser();
+            }
+            drawerLayout.closeDrawers();
+            return true;
+        });
+    }
+
+    // ---------------- Load user info ----------------
     private void loadUserInfo(String uid) {
         DocumentReference ref = db.collection("Users").document(uid);
         ref.get().addOnSuccessListener(document -> {
@@ -207,6 +211,22 @@ public class HomeActivity extends AppCompatActivity {
                 );
     }
 
+    // ---------------- Periodic background sync setup ----------------
+    private void schedulePeriodicSync() {
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+
+        PeriodicWorkRequest syncWorkRequest = new PeriodicWorkRequest.Builder(
+                SyncWorker.class,
+                15,
+                TimeUnit.MINUTES
+        ).setConstraints(constraints).build();
+
+        WorkManager.getInstance(getApplicationContext()).enqueue(syncWorkRequest);
+    }
+
+    // ---------------- Logout ----------------
     private void logoutUser() {
         mAuth.signOut();
         startActivity(new Intent(this, MainActivity.class));

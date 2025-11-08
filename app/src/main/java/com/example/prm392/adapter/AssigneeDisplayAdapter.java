@@ -11,18 +11,18 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.R;
+import com.example.prm392.models.UserEntity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import models.Users;
-
 public class AssigneeDisplayAdapter extends RecyclerView.Adapter<AssigneeDisplayAdapter.ViewHolder> {
 
-    private Context context;
-    private List<Users> assignees;
+    private final Context context;
+    private List<UserEntity> assignees;
 
-    private final String[] avatarColors = {
+    // Predefined avatar color palette
+    private static final String[] AVATAR_COLORS = {
             "#1976D2", "#388E3C", "#D32F2F", "#7B1FA2",
             "#F57C00", "#0097A7", "#C2185B", "#5D4037"
     };
@@ -32,7 +32,7 @@ public class AssigneeDisplayAdapter extends RecyclerView.Adapter<AssigneeDisplay
         this.assignees = new ArrayList<>();
     }
 
-    public void setAssignees(List<Users> assignees) {
+    public void setAssignees(List<UserEntity> assignees) {
         this.assignees = assignees != null ? assignees : new ArrayList<>();
         notifyDataSetChanged();
     }
@@ -47,19 +47,24 @@ public class AssigneeDisplayAdapter extends RecyclerView.Adapter<AssigneeDisplay
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Users user = assignees.get(position);
+        UserEntity user = assignees.get(position);
 
-        // Full name
-        String fullName = user.getFirstName() + " " + user.getLastName();
+        // Full name (fallback if null)
+        String fullName = (user.fullName != null && !user.fullName.isEmpty())
+                ? user.fullName : "Unknown User";
         holder.tvAssigneeName.setText(fullName);
-        holder.tvAssigneeEmail.setText(user.getEmail());
 
-        // Avatar
-        String initial = user.getFirstName().substring(0, 1).toUpperCase();
+        // Email display
+        holder.tvAssigneeEmail.setText(
+                (user.email != null && !user.email.isEmpty()) ? user.email : "(no email)"
+        );
+
+        // Avatar letter
+        String initial = fullName.substring(0, 1).toUpperCase();
         holder.tvAssigneeAvatar.setText(initial);
 
-        // Avatar color
-        String color = avatarColors[position % avatarColors.length];
+        // Avatar color (cycled)
+        String color = AVATAR_COLORS[position % AVATAR_COLORS.length];
         holder.tvAssigneeAvatar.setBackgroundResource(R.drawable.circle_avatar);
         holder.tvAssigneeAvatar.getBackground().setTint(Color.parseColor(color));
     }

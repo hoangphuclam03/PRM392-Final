@@ -1,24 +1,26 @@
-package com.example.prm392;
+package com.example.prm392.activities;
 
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-import androidx.appcompat.widget.Toolbar;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
-import data.local.DBConnect;
+import com.example.prm392.R;
+import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.data.local.ProjectDAO;
+import com.example.prm392.models.ProjectEntity;
+
+import java.util.List;
+import java.util.UUID;
 
 public class CreateManagingProjectActivity extends AppCompatActivity {
 
     private EditText edtName, edtDesc;
     private Button btnCreate;
-    private DBConnect db;
-    private int currentUserId = 1; // 🔹 Giả lập user đang đăng nhập
+    private ProjectDAO projectDAO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,13 +40,13 @@ public class CreateManagingProjectActivity extends AppCompatActivity {
         edtName = findViewById(R.id.edtProjectName);
         edtDesc = findViewById(R.id.edtDescription);
         btnCreate = findViewById(R.id.btnCreate);
-        db = new DBConnect(this);
 
-        // ------------------- Nút tạo project -------------------
+        // ------------------- Room DAO -------------------
+        projectDAO = AppDatabase.getInstance(getApplicationContext()).projectDAO();
+
+        // ------------------- Button click -------------------
         btnCreate.setOnClickListener(v -> createProject());
     }
-
-
 
     private void createProject() {
         String name = edtName.getText().toString().trim();
@@ -56,59 +58,46 @@ public class CreateManagingProjectActivity extends AppCompatActivity {
             edtName.requestFocus();
             return;
         }
-
         if (name.length() < 3) {
             edtName.setError("Tên project phải có ít nhất 3 ký tự!");
             edtName.requestFocus();
             return;
         }
-
         if (desc.length() < 10) {
             edtDesc.setError("Mô tả phải có ít nhất 10 ký tự!");
             edtDesc.requestFocus();
             return;
         }
-
         if (desc.length() > 300) {
             edtDesc.setError("Mô tả quá dài (tối đa 300 ký tự)!");
             edtDesc.requestFocus();
             return;
         }
 
-        // ✅ Kiểm tra project trùng tên
-        SQLiteDatabase database = db.getReadableDatabase();
-        Cursor cursor = database.rawQuery(
-                "SELECT project_id FROM projects WHERE LOWER(project_name) = ?",
-                new String[]{name.toLowerCase()}
-        );
-        if (cursor.moveToFirst()) {
-            cursor.close();
+        // ---------------- CHECK DUPLICATE ----------------
+        List<ProjectEntity> existing = projectDAO.findByName(name);
+        if (existing != null && !existing.isEmpty()) {
             edtName.setError("Tên project đã tồn tại!");
             edtName.requestFocus();
             return;
         }
-        cursor.close();
 
-        // ---------------- LƯU PROJECT ----------------
-        SQLiteDatabase writableDb = db.getWritableDatabase();
+        // ---------------- CREATE PROJECT ----------------
+        ProjectEntity project = new ProjectEntity();
+        project.projectId = java.util.UUID.randomUUID().toString();
+        project.projectName = name;
+        project.description = desc;
+        project.createdBy = "currentUserId"; // if available
+        project.createdAt = String.valueOf(System.currentTimeMillis());
+        project.isPublic = false;
 
-        ContentValues projectValues = new ContentValues();
-        projectValues.put("project_name", name);
-        projectValues.put("description", desc);
 
-        long projectId = writableDb.insert("projects", null, projectValues);
+        // Room insert (synchronous for simplicity; could use Executor in production)
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            projectDAO.insertOrUpdate(project);
+        });
 
-        if (projectId != -1) {
-            ContentValues memberValues = new ContentValues();
-            memberValues.put("project_id", projectId);
-            memberValues.put("user_id", currentUserId);
-            memberValues.put("role", "Manager");
-            writableDb.insert("project_members", null, memberValues);
-
-            Toast.makeText(this, "Tạo project thành công!", Toast.LENGTH_SHORT).show();
-            finish(); // quay lại màn trước mà không đổi theme
-        } else {
-            Toast.makeText(this, "Không thể tạo project. Vui lòng thử lại!", Toast.LENGTH_SHORT).show();
-        }
+        Toast.makeText(this, "Tạo project thành công!", Toast.LENGTH_SHORT).show();
+        finish();
     }
 }

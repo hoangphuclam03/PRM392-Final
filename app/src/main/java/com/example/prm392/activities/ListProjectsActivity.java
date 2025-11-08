@@ -1,8 +1,6 @@
-package com.example.prm392;
+package com.example.prm392.activities;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -10,31 +8,34 @@ import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.prm392.R;
+import com.example.prm392.adapter.ProjectAdapter;
+import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.data.local.ProjectDAO;
+import com.example.prm392.models.ProjectEntity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import data.local.DBConnect;
-import models.Projects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ListProjectsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private FloatingActionButton fabAdd;
-    private DBConnect db;
-    private List<Projects> projectList;
     private ProjectAdapter adapter;
+    private ProjectDAO projectDAO;
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
+
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,17 +60,17 @@ public class ListProjectsActivity extends AppCompatActivity {
         );
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
-        // Đổi màu biểu tượng menu nếu cần
         toggle.getDrawerArrowDrawable().setColor(getResources().getColor(android.R.color.white));
 
+        // ---------------- INIT ROOM DATABASE ----------------
+        projectDAO = AppDatabase.getInstance(this).projectDAO();
+
         // ---------------- LOAD DỮ LIỆU PROJECT ----------------
-        db = new DBConnect(this);
         loadProjects();
 
         fabAdd.setOnClickListener(v -> {
             Intent intent = new Intent(this, CreateManagingProjectActivity.class);
             startActivity(intent);
-
         });
 
         // ---------------- XỬ LÝ MENU BÊN TRÁI ----------------
@@ -77,21 +78,27 @@ public class ListProjectsActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                Intent intent = new Intent(ListProjectsActivity.this, HomeActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(this, HomeActivity.class));
                 drawerLayout.closeDrawers();
                 return true;
 
-        } else if (id == R.id.nav_profile) {
+            } else if (id == R.id.nav_profile) {
                 Toast.makeText(this, "Bạn đang ở: Hồ sơ cá nhân", Toast.LENGTH_SHORT).show();
+
             } else if (id == R.id.nav_chat) {
                 startActivity(new Intent(this, ChatActivity.class));
+
             } else if (id == R.id.nav_project) {
-                startActivity(new Intent(this, ListProjectsActivity.class));
+                // Already here
+                drawerLayout.closeDrawers();
+                return true;
+
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
+
             } else if (id == R.id.nav_calendar) {
                 startActivity(new Intent(this, CalendarEventsActivity.class));
+
             } else if (id == R.id.nav_logout) {
                 logoutUser();
             }
@@ -101,32 +108,23 @@ public class ListProjectsActivity extends AppCompatActivity {
         });
     }
 
-    // ---------------- HÀM LOAD PROJECTS ----------------
+    // ---------------- LOAD PROJECTS ----------------
     private void loadProjects() {
-        projectList = new ArrayList<>();
-        SQLiteDatabase database = db.getReadableDatabase();
-        Cursor cursor = database.rawQuery("SELECT * FROM projects", null);
-
-        if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow("project_id"));
-                String name = cursor.getString(cursor.getColumnIndexOrThrow("project_name"));
-                String desc = cursor.getString(cursor.getColumnIndexOrThrow("description"));
-                projectList.add(new Projects(id, name, desc));
-            } while (cursor.moveToNext());
-        } else {
-            Toast.makeText(this, "Chưa có dự án nào.", Toast.LENGTH_SHORT).show();
-        }
-
-        cursor.close();
-        adapter = new ProjectAdapter(projectList, project -> {
-            Intent intent = new Intent(this, ListMembersActivity.class);
-            intent.putExtra("projectId", project.getProjectId());
-            startActivity(intent);
+        executor.execute(() -> {
+            List<ProjectEntity> projects = projectDAO.getAllProjects();
+            runOnUiThread(() -> {
+                if (projects == null || projects.isEmpty()) {
+                    Toast.makeText(this, "Chưa có dự án nào.", Toast.LENGTH_SHORT).show();
+                }
+                adapter = new ProjectAdapter(projects, project -> {
+                    Intent intent = new Intent(this, ListMembersActivity.class);
+                    intent.putExtra("projectId", project.projectId);
+                    startActivity(intent);
+                });
+                recyclerView.setLayoutManager(new LinearLayoutManager(this));
+                recyclerView.setAdapter(adapter);
+            });
         });
-
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
     }
 
     // ---------------- REFRESH KHI QUAY LẠI ----------------
