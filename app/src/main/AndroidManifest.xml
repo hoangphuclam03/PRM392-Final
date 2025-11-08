@@ -30,7 +30,11 @@
             android:name=".activities.HomeActivity"
             android:exported="true" />
 
+
+
         <!-- 🔹 Các màn chức năng chính -->
+        <activity android:name=".activities.UserProfileActivity" />
+
         <activity
             android:name=".activities.ChatActivity"
             android:exported="false" />

@@ -149,27 +149,40 @@ public class HomeActivity extends AppCompatActivity {
         );
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
+
+        // ✅ Hiển thị trạng thái menu hiện tại là “Trang chủ”
+        navigationView.setCheckedItem(R.id.nav_home);
     }
 
     // ---------------- Navigation Setup ----------------
     private void setupNavigation() {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
+
             if (id == R.id.nav_home) {
                 recreate();
-            } else if (id == R.id.nav_profile) {
-                tvWelcome.setText("Bạn đang ở: Hồ sơ cá nhân");
-            } else if (id == R.id.nav_chat) {
+            }
+            // ✅ Mở Hồ sơ cá nhân (UserProfileActivity)
+            else if (id == R.id.nav_profile) {
+                Intent intent = new Intent(HomeActivity.this, UserProfileActivity.class);
+                startActivity(intent);
+            }
+            else if (id == R.id.nav_chat) {
                 startActivity(new Intent(HomeActivity.this, ChatActivity.class));
-            } else if (id == R.id.nav_project) {
+            }
+            else if (id == R.id.nav_project) {
                 startActivity(new Intent(HomeActivity.this, ListYourProjectsActivity.class));
-            } else if (id == R.id.nav_settings) {
+            }
+            else if (id == R.id.nav_settings) {
                 startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
-            } else if (id == R.id.nav_calendar) {
+            }
+            else if (id == R.id.nav_calendar) {
                 startActivity(new Intent(HomeActivity.this, CalendarEventsActivity.class));
-            } else if (id == R.id.nav_logout) {
+            }
+            else if (id == R.id.nav_logout) {
                 logoutUser();
             }
+
             drawerLayout.closeDrawers();
             return true;
         });
@@ -180,11 +193,15 @@ public class HomeActivity extends AppCompatActivity {
         DocumentReference ref = db.collection("Users").document(uid);
         ref.get().addOnSuccessListener(document -> {
             if (document.exists()) {
+                // 🔹 Ưu tiên dùng fullName nếu đã có (đồng bộ với RegisterActivity mới)
+                String fullName = document.getString("fullName");
                 String firstName = document.getString("firstName");
                 String lastName = document.getString("lastName");
                 String email = document.getString("email");
 
-                if (firstName != null && lastName != null) {
+                if (fullName != null && !fullName.isEmpty()) {
+                    tvWelcome.setText("Xin chào, " + fullName + "!");
+                } else if (firstName != null && lastName != null) {
                     tvWelcome.setText("Xin chào, " + firstName + " " + lastName + "!");
                 } else if (email != null) {
                     tvWelcome.setText("Xin chào, " + email);
