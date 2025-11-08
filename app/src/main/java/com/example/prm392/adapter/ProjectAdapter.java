@@ -3,62 +3,84 @@ package com.example.prm392.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.prm392.models.ProjectEntity;
 import com.example.prm392.R;
+import com.example.prm392.models.ProjectEntity;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ViewHolder> {
 
-    public interface OnProjectClickListener {
-        void onProjectClick(ProjectEntity project);
-    }
-
-    private List<ProjectEntity> projectList;
+    private List<ProjectEntity> projects;
     private OnProjectClickListener listener;
 
-    public ProjectAdapter(List<ProjectEntity> projectList, OnProjectClickListener listener) {
-        this.projectList = (projectList != null) ? projectList : new ArrayList<>();
+    // === Interface callback ===
+    public interface OnProjectClickListener {
+        void onItemClick(ProjectEntity project);
+        void onRequestJoinClick(ProjectEntity project);
+    }
+
+    // === Constructor ===
+    public ProjectAdapter(List<ProjectEntity> projects, OnProjectClickListener listener) {
+        this.projects = projects;
         this.listener = listener;
+    }
+
+    // === ViewHolder ===
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView tvName, tvDesc, tvPublic;
+        Button btnJoin;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvName = itemView.findViewById(R.id.tv_project_name);
+            tvDesc = itemView.findViewById(R.id.tv_project_desc);
+            tvPublic = itemView.findViewById(R.id.tv_project_public);
+            btnJoin = itemView.findViewById(R.id.btn_request_join);
+        }
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_project, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        ProjectEntity project = projectList.get(position);
-        holder.txtProjectName.setText(project.projectName != null ? project.projectName : "(No name)");
-        holder.txtDescription.setText(project.description != null ? project.description : "(No description)");
+        ProjectEntity project = projects.get(position);
+        holder.tvName.setText(project.projectName);
+        holder.tvDesc.setText(project.description != null ? project.description : "(Không có mô tả)");
+        holder.tvPublic.setText(project.isPublic ? "Public" : "Private");
 
+        // Click vào toàn bộ item
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onProjectClick(project);
+            if (listener != null) listener.onItemClick(project);
         });
+
+        // Nút gửi yêu cầu tham gia
+        if (holder.btnJoin != null) {
+            holder.btnJoin.setOnClickListener(v -> {
+                if (listener != null) listener.onRequestJoinClick(project);
+            });
+        }
     }
 
     @Override
     public int getItemCount() {
-        return projectList != null ? projectList.size() : 0;
+        return projects != null ? projects.size() : 0;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView txtProjectName, txtDescription;
-
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            txtProjectName = itemView.findViewById(R.id.txtProjectName);
-            txtDescription = itemView.findViewById(R.id.txtProjectDesc);
-        }
+    // === Cho phép cập nhật lại danh sách (nếu cần search) ===
+    public void setData(List<ProjectEntity> newProjects) {
+        this.projects = newProjects;
+        notifyDataSetChanged();
     }
 }

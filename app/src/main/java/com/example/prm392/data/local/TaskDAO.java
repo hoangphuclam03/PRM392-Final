@@ -38,6 +38,18 @@ public interface TaskDAO {
 
     @Query("UPDATE tasks SET pendingSync = 0, lastSyncedAt = :timestamp WHERE taskId = :taskId")
     void markSynced(String taskId, long timestamp);
+    @Query("""
+SELECT * FROM tasks
+WHERE projectId = :projectId
+  AND assignedTo = :userId
+  AND dueDate BETWEEN :start AND :end
+""")
+    List<TaskEntity> getMyProjectTasksBetweenDates(
+            String projectId,
+            String userId,
+            String start,
+            String end
+    );
 
     @Delete
     void delete(TaskEntity task);

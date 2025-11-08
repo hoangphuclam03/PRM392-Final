@@ -19,7 +19,7 @@
         <activity android:name=".activities.TeamListActivity" />
         <activity
             android:name=".activities.ChatActivity"
-            android:exported="false" /> <!-- ✅ Màn hình chính sau khi login -->
+            android:exported="false" />
         <activity
             android:name=".activities.ListYourProjectsActivity"
             android:exported="false" />
@@ -60,7 +60,9 @@
         <activity
             android:name=".activities.SettingsActivity"
             android:exported="false" />
-
+        <activity
+            android:name=".activities.ListProjectsActivity"
+            android:exported="false" />
 
     </application>
 

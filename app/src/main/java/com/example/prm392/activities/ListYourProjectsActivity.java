@@ -87,10 +87,17 @@ public class ListYourProjectsActivity extends AppCompatActivity {
                     return;
                 }
 
-                adapter = new ProjectAdapter(userProjects, project -> {
-                    Intent intent = new Intent(this, ProjectStatusActivity.class);
-                    intent.putExtra("projectId", project.projectId);
-                    startActivity(intent);
+                adapter = new ProjectAdapter(userProjects, new ProjectAdapter.OnProjectClickListener() {
+                    @Override
+                    public void onItemClick(ProjectEntity project) {
+                        // xử lý click item
+                    }
+
+                    @Override
+                    public void onRequestJoinClick(ProjectEntity project) {
+                        // nếu màn hình này KHÔNG có nút Join, cứ để trống hoặc no-op
+                        // ví dụ: không làm gì
+                    }
                 });
 
                 recyclerView.setLayoutManager(new LinearLayoutManager(this));

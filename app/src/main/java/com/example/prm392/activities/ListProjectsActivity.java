@@ -3,6 +3,7 @@ package com.example.prm392.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -20,7 +21,9 @@ import com.example.prm392.models.ProjectEntity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,7 +38,7 @@ public class ListProjectsActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +52,12 @@ public class ListProjectsActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        // ẨN FAB NẾU Ở CHẾ ĐỘ JOIN (phải làm sau khi findViewById)
+        String mode = getIntent().getStringExtra("mode");
+        if ("join".equals(mode)) {
+            fabAdd.setVisibility(View.GONE);
+        }
 
         // ---------------- SETUP DRAWER TOGGLE ----------------
         toggle = new ActionBarDrawerToggle(
@@ -108,23 +117,60 @@ public class ListProjectsActivity extends AppCompatActivity {
         });
     }
 
-    // ---------------- LOAD PROJECTS ----------------
+    // ---------------- LOAD PROJECTS (duy nhất) ----------------
     private void loadProjects() {
+        final boolean joinMode = "join".equals(getIntent().getStringExtra("mode"));
+
         executor.execute(() -> {
-            List<ProjectEntity> projects = projectDAO.getAllProjects();
+            List<ProjectEntity> projects = joinMode
+                    ? projectDAO.getPublicProjects()
+                    : projectDAO.getAllProjects();
+
             runOnUiThread(() -> {
                 if (projects == null || projects.isEmpty()) {
-                    Toast.makeText(this, "Chưa có dự án nào.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, joinMode ? "Chưa có dự án công khai." : "Chưa có dự án nào.", Toast.LENGTH_SHORT).show();
                 }
-                adapter = new ProjectAdapter(projects, project -> {
-                    Intent intent = new Intent(this, ListMembersActivity.class);
-                    intent.putExtra("projectId", project.projectId);
-                    startActivity(intent);
+
+                adapter = new ProjectAdapter(projects, new ProjectAdapter.OnProjectClickListener() {
+                    @Override
+                    public void onItemClick(ProjectEntity project) {
+                        // Mở chi tiết, hoặc danh sách thành viên dự án
+                        Intent intent = new Intent(ListProjectsActivity.this, ListMembersActivity.class);
+                        intent.putExtra("projectId", project.projectId);
+                        startActivity(intent);
+                    }
+
+                    @Override
+                    public void onRequestJoinClick(ProjectEntity project) {
+                        // Gửi join request
+                        sendJoinRequest(project);
+                    }
                 });
+
                 recyclerView.setLayoutManager(new LinearLayoutManager(this));
                 recyclerView.setAdapter(adapter);
             });
         });
+    }
+
+    private void sendJoinRequest(ProjectEntity project) {
+        String uid = com.example.prm392.utils.FirebaseUtil.currentUserId();
+        if (uid == null) {
+            Toast.makeText(this, "Bạn chưa đăng nhập.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Map<String, Object> req = new HashMap<>();
+        req.put("userId", uid);
+        req.put("projectId", project.projectId);
+        req.put("timestamp", System.currentTimeMillis());
+        req.put("status", "pending");
+
+        com.example.prm392.utils.FirebaseUtil
+                .db
+                .collection("join_requests")
+                .add(req)
+                .addOnSuccessListener(r -> Toast.makeText(this, "Đã gửi yêu cầu tham gia!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     // ---------------- REFRESH KHI QUAY LẠI ----------------

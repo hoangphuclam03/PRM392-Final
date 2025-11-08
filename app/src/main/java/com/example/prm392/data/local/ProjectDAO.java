@@ -14,29 +14,29 @@ import java.util.List;
 @Dao
 public interface ProjectDAO {
 
-    // Insert or replace (auto handles duplicates by projectId)
+    // ✅ Upsert chính thức (bạn cần để TeamListActivity dùng)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void upsert(ProjectEntity project);
+
+    // ✅ Hàm cũ vẫn giữ nguyên
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertOrUpdate(ProjectEntity project);
 
     @Update
     void update(ProjectEntity project);
 
-    // 🔍 Find project(s) by name — used for duplicate check in CreateManagingProjectActivity
     @Query("SELECT * FROM projects WHERE projectName = :name")
     List<ProjectEntity> findByName(String name);
 
     @Query("DELETE FROM projects")
     void clearAll();
 
-    // 🔍 Find project by Firestore ID
     @Query("SELECT * FROM projects WHERE projectId = :id LIMIT 1")
     ProjectEntity findById(String id);
 
-    // 🧾 Get all projects (newest first if you want to sort by localId or createdAt)
     @Query("SELECT * FROM projects ORDER BY localId DESC")
     List<ProjectEntity> getAllProjects();
 
-    // 🗑 Delete by ID
     @Query("DELETE FROM projects WHERE projectId = :id")
     void deleteById(String id);
 
@@ -46,7 +46,6 @@ public interface ProjectDAO {
     @Query("SELECT * FROM projects WHERE projectId = :projectId LIMIT 1")
     ProjectEntity getProjectById(String projectId);
 
-    // 🔍 Optional: search by keyword for a global search feature later
     @Query("SELECT * FROM projects WHERE projectName LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'")
     List<ProjectEntity> searchProjects(String query);
 
@@ -55,6 +54,14 @@ public interface ProjectDAO {
 
     @Query("UPDATE projects SET pendingSync = 0, lastSyncedAt = :timestamp WHERE projectId = :projectId")
     void markSynced(String projectId, long timestamp);
+
+    @Query("SELECT * FROM projects WHERE isPublic = 1 ORDER BY updatedAt DESC")
+    List<ProjectEntity> getPublicProjects();
+
+    @Query("SELECT * FROM projects WHERE isPublic = 1 AND " +
+            "(projectName LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%') " +
+            "ORDER BY updatedAt DESC")
+    List<ProjectEntity> searchPublicProjects(String query);
 
     @Delete
     void delete(ProjectEntity project);

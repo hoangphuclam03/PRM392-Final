@@ -7,17 +7,24 @@ import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import com.example.prm392.models.ChatEntity;
-import com.example.prm392.models.NotificationEntity;
 
 import java.util.List;
 
 @Dao
 public interface ChatDAO {
+
+    // Dùng ở chỗ khác nếu cần upsert nhanh
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertOrUpdate(ChatEntity chat);
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(ChatEntity notification);
+    // ✅ DÙNG CHO GỬI TIN: cần rowId để update lại đúng bản ghi
+    @Insert
+    long insert(ChatEntity chat);
+
+    // ✅ Cập nhật trạng thái đã đồng bộ đúng 1 dòng (tránh tạo bản ghi mới)
+    @Query("UPDATE chats SET chatId = :chatId, isPendingSync = 0 WHERE localId = :localId")
+    void markSynced(int localId, String chatId);
+
     @Query("SELECT * FROM chats WHERE projectId = :projectId ORDER BY timestamp ASC")
     List<ChatEntity> getByProject(String projectId);
 
@@ -32,7 +39,4 @@ public interface ChatDAO {
 
     @Query("SELECT * FROM chats WHERE projectId = :projectId ORDER BY timestamp ASC")
     LiveData<List<ChatEntity>> getByProjectLive(String projectId);
-
-    @Query("SELECT * FROM notifications ORDER BY timestamp DESC")
-    List<NotificationEntity> getAllNotifications();
 }
