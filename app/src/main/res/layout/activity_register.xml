@@ -92,12 +92,38 @@
         android:id="@+id/tvPasswordNote"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Ít nhất 6 ký tự, bao gồm chữ và số"
+        android:text="Ít nhất 8 ký tự, có chữ hoa, thường, số và ký tự đặc biệt"
         android:textSize="12sp"
         android:textColor="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/edtPasswordRegister"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="8dp" />
+
+    <!-- Hiển thị độ mạnh mật khẩu -->
+    <TextView
+        android:id="@+id/tvPasswordStrength"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="@android:color/darker_gray"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/tvPasswordNote"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="8dp" />
+
+    <!-- Thanh tiến độ độ mạnh mật khẩu -->
+    <ProgressBar
+        android:id="@+id/pbPasswordStrength"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="8dp"
+        android:max="5"
+        android:progress="0"
+        android:progressTint="@android:color/darker_gray"
+        android:layout_marginTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/tvPasswordStrength"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Checkbox đồng ý điều khoản -->
     <CheckBox
@@ -106,7 +132,7 @@
         android:layout_height="wrap_content"
         android:text="Đồng ý với điều khoản sử dụng"
         android:textColor="?attr/colorOnSurface"
-        app:layout_constraintTop_toBottomOf="@id/tvPasswordNote"
+        app:layout_constraintTop_toBottomOf="@id/pbPasswordStrength"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="16dp" />
 

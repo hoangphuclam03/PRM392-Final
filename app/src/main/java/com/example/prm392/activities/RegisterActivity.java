@@ -3,6 +3,8 @@ package com.example.prm392.activities;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -26,7 +28,7 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText edtFullName, edtEmailRegister, edtPasswordRegister, edtConfirmPassword;
     private Button btnCreateAccount;
     private CheckBox cbAgree;
-    private TextView tvGoToLogin;
+    private TextView tvGoToLogin, tvPasswordStrength; // ✅ thêm dòng này
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -38,7 +40,6 @@ public class RegisterActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // ---------------- Áp dụng theme lưu trước ----------------
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean darkTheme = prefs.getBoolean(KEY_DARK_THEME, false);
         AppCompatDelegate.setDefaultNightMode(
@@ -56,11 +57,26 @@ public class RegisterActivity extends AppCompatActivity {
         cbAgree = findViewById(R.id.cbAgree);
         btnCreateAccount = findViewById(R.id.btnCreateAccount);
         tvGoToLogin = findViewById(R.id.tvGoToLogin);
+        tvPasswordStrength = findViewById(R.id.tvPasswordStrength);
 
-        // ---------------- Khởi tạo Firebase + Room ----------------
+        // ---------------- Firebase + Room ----------------
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         userDAO = AppDatabase.getInstance(this).userDAO();
+
+        // ---------------- Theo dõi độ mạnh mật khẩu ----------------
+        edtPasswordRegister.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updatePasswordStrength(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
 
         // ---------------- Sự kiện ----------------
         btnCreateAccount.setOnClickListener(v -> createAccount());
@@ -70,13 +86,39 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
+    // ✅ Hàm kiểm tra độ mạnh mật khẩu
+    private void updatePasswordStrength(String password) {
+        if (password.isEmpty()) {
+            tvPasswordStrength.setText("");
+            return;
+        }
+
+        int score = 0;
+        if (password.length() >= 8) score++;
+        if (password.matches(".*[A-Z].*")) score++;
+        if (password.matches(".*[a-z].*")) score++;
+        if (password.matches(".*[0-9].*")) score++;
+        if (password.matches(".*[!@#$%^&*()_+=\\-{};:'\",.<>?].*")) score++;
+
+        if (score <= 2) {
+            tvPasswordStrength.setText("Độ mạnh mật khẩu: Yếu");
+            tvPasswordStrength.setTextColor(getColor(android.R.color.holo_red_dark));
+        } else if (score == 3 || score == 4) {
+            tvPasswordStrength.setText("Độ mạnh mật khẩu: Trung bình");
+            tvPasswordStrength.setTextColor(getColor(android.R.color.holo_orange_dark));
+        } else {
+            tvPasswordStrength.setText("Độ mạnh mật khẩu: Mạnh");
+            tvPasswordStrength.setTextColor(getColor(android.R.color.holo_green_dark));
+        }
+    }
+
+    // ---------------- Kiểm tra & Tạo tài khoản ----------------
     private void createAccount() {
         String fullName = edtFullName.getText().toString().trim();
         String email = edtEmailRegister.getText().toString().trim();
         String password = edtPasswordRegister.getText().toString().trim();
         String confirm = edtConfirmPassword.getText().toString().trim();
 
-        // ---------------- Kiểm tra ----------------
         if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
             Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
             return;
@@ -85,12 +127,23 @@ public class RegisterActivity extends AppCompatActivity {
             Toast.makeText(this, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // ✅ Thêm kiểm tra độ mạnh thực tế
+        if (password.length() < 8 ||
+                !password.matches(".*[A-Z].*") ||
+                !password.matches(".*[a-z].*") ||
+                !password.matches(".*[0-9].*") ||
+                !password.matches(".*[!@#$%^&*()_+=\\-{};:'\",.<>?].*")) {
+            Toast.makeText(this, "Mật khẩu phải gồm ít nhất 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         if (!cbAgree.isChecked()) {
             Toast.makeText(this, "Vui lòng đồng ý với điều khoản", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // ---------------- Tạo tài khoản Firebase ----------------
+        // ---------------- Firebase Auth ----------------
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -98,7 +151,6 @@ public class RegisterActivity extends AppCompatActivity {
                         if (user != null) {
                             user.sendEmailVerification();
 
-                            // ---------------- Dữ liệu để lưu Firestore ----------------
                             Map<String, Object> userData = new HashMap<>();
                             userData.put("userId", user.getUid());
                             userData.put("fullName", fullName);
@@ -126,7 +178,7 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
-    // ---------------- Lưu user vào Room DB ----------------
+    // ---------------- Lưu user vào Room ----------------
     private void saveUserToLocal(String userId, String fullName, String email, String password) {
         executor.execute(() -> {
             UserEntity existing = userDAO.findByEmail(email);
