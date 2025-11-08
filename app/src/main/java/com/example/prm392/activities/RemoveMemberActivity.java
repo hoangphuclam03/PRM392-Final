@@ -41,8 +41,6 @@ public class RemoveMemberActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_remove_member);
 
-        recyclerView = findViewById(R.id.recyclerMembers);
-        searchInput = findViewById(R.id.search_username_input);
 
         AppDatabase db = AppDatabase.getInstance(this);
         projectDAO = db.projectDAO();
