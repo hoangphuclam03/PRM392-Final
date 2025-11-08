@@ -8,65 +8,53 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.prm392.models.UserEntity;
 
-import models.Users;
-
+/**
+ * Utility class for Android UI helpers and UserEntity intent transfer.
+ * Works fully offline with Room (no Firestore dependency).
+ */
 public class AndroidUtil {
 
+    // ===== Toast Utility =====
     public static void showToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();
     }
 
-    // ===== Users <-> Intent =====
+    // ===== UserEntity <-> Intent =====
 
-    /** Đưa Users vào Intent.
-     *  Giữ khoá "userId" = String(id) để tương thích các màn khác.
+    /**
+     * Puts UserEntity data into an Intent for transfer between Activities.
      */
-    public static void passUsersAsIntent(Intent intent, Users u) {
-        if (u == null) return;
-        intent.putExtra("userId", String.valueOf(u.getUid()));    // quan trọng: id dạng chuỗi
-        intent.putExtra("firstName", u.getFirstName());
-        intent.putExtra("lastName",  u.getLastName());
-        intent.putExtra("username",  u.getUsername());           // đã auto ghép nếu null
-        intent.putExtra("email",     u.getEmail());
-        intent.putExtra("fcmToken",  u.getFcmToken());
-        // createdTimestamp nếu cần có thể convert sang millis để truyền
-        // if (u.getCreatedTimestamp() != null) {
-        //     intent.putExtra("createdTs", u.getCreatedTimestamp().toDate().getTime());
-        // }
+    public static void passUserAsIntent(Intent intent, UserEntity user) {
+        if (intent == null || user == null) return;
+
+        intent.putExtra("userId", user.userId);
+        intent.putExtra("fullName", user.fullName);
+        intent.putExtra("email", user.email);
+        intent.putExtra("password", user.password);  // (optional, if needed)
+        intent.putExtra("avatarUrl", user.avatarUrl);
+        intent.putExtra("lastLogin", user.lastLogin);
     }
 
-    /** Lấy Users từ Intent.
-     *  Nếu không có username sẽ tự ghép từ firstName + lastName (theo logic trong Users).
+    /**
+     * Reconstructs a UserEntity from an Intent.
      */
-    public static Users getUsersFromIntent(Intent intent) {
+    public static UserEntity getUserFromIntent(Intent intent) {
         if (intent == null) return null;
-        Users u = new Users();
-        // id lấy từ "userId" (chuỗi số)
-        try {
-            String idStr = intent.getStringExtra("userId");
-            if (idStr != null) {
-                String uid = idStr.trim();
-                if (!uid.isEmpty()) u.setUid(uid);
-            }
-        } catch (Exception ignore) {}
 
-        u.setFirstName(intent.getStringExtra("firstName"));
-        u.setLastName(intent.getStringExtra("lastName"));
-        u.setUsername(intent.getStringExtra("username")); // nếu null -> Users.getUsername() sẽ tự ghép
-        u.setEmail(intent.getStringExtra("email"));
-        u.setFcmToken(intent.getStringExtra("fcmToken"));
+        UserEntity user = new UserEntity();
+        user.userId = intent.getStringExtra("userId");
+        user.fullName = intent.getStringExtra("fullName");
+        user.email = intent.getStringExtra("email");
+        user.password = intent.getStringExtra("password");
+        user.avatarUrl = intent.getStringExtra("avatarUrl");
+        user.lastLogin = intent.getLongExtra("lastLogin", 0L);
 
-        // Nếu bạn có truyền createdTs (millis):
-        // if (intent.hasExtra("createdTs")) {
-        //     long ms = intent.getLongExtra("createdTs", 0L);
-        //     if (ms > 0) u.setCreatedTimestamp(new com.google.firebase.Timestamp(new java.util.Date(ms)));
-        // }
-
-        return u;
+        return user;
     }
 
-    // ===== Ảnh đại diện =====
+    // ===== Avatar Handling (Glide) =====
     public static void setProfilePic(Context context, Uri imageUri, ImageView imageView) {
         Glide.with(context)
                 .load(imageUri)
@@ -74,12 +62,15 @@ public class AndroidUtil {
                 .into(imageView);
     }
 
-    // ===== Tiện ích tên đầy đủ (nếu cần dùng lại) =====
-    public static String fullName(Users u) {
-        if (u == null) return "User";
-        String ln = u.getLastName()  != null ? u.getLastName().trim()  : "";
-        String fn = u.getFirstName() != null ? u.getFirstName().trim() : "";
-        String name = (ln + " " + fn).trim();
-        return name.isEmpty() ? "User" : name;
+    // ===== Helper: Get full name =====
+    public static String fullName(UserEntity user) {
+        if (user == null) return "Unknown User";
+        if (user.fullName != null && !user.fullName.trim().isEmpty()) {
+            return user.fullName.trim();
+        }
+        if (user.email != null && !user.email.trim().isEmpty()) {
+            return user.email.trim();
+        }
+        return "User";
     }
 }

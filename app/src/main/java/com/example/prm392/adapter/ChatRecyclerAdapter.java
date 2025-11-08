@@ -1,6 +1,7 @@
 package com.example.prm392.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,183 +12,121 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.R;
+import com.example.prm392.models.ChatEntity;
+import com.example.prm392.models.UserEntity;
 import com.example.prm392.utils.FirebaseUtil;
-import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
-import com.google.firebase.firestore.DocumentSnapshot;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-import models.ChatMessageModel;
-import models.Users;
-
-public class ChatRecyclerAdapter extends FirestoreRecyclerAdapter<ChatMessageModel, ChatRecyclerAdapter.ChatModelViewHolder> {
+public class ChatRecyclerAdapter extends RecyclerView.Adapter<ChatRecyclerAdapter.ChatViewHolder> {
 
     private final Context context;
+    private final List<ChatEntity> chatList;
+    private final HashMap<String, UserEntity> userCache = new HashMap<>();
 
-    /** BẬT tên người gửi khi chat team */
     private final boolean showSenderName;
-    /** cache uid -> display name để tránh query nhiều */
-    private final Map<String, String> nameCache = new HashMap<>();
-    private final String myUid = FirebaseUtil.currentUserId();
+    private final String myUid;
 
-    /** Giữ nguyên constructor cũ (private chat) */
-    public ChatRecyclerAdapter(@NonNull FirestoreRecyclerOptions<ChatMessageModel> options,
-                               Context context) {
-        this(options, context, false);
-    }
-
-    /** Constructor cho team chat (truyền true để hiện tên) */
-    public ChatRecyclerAdapter(@NonNull FirestoreRecyclerOptions<ChatMessageModel> options,
-                               Context context,
-                               boolean showSenderName) {
-        super(options);
+    public ChatRecyclerAdapter(Context context, boolean showSenderName) {
         this.context = context;
+        this.chatList = new ArrayList<>();
         this.showSenderName = showSenderName;
+        this.myUid = FirebaseUtil.currentUserId();
     }
 
-    @Override
-    protected void onBindViewHolder(@NonNull ChatModelViewHolder holder,
-                                    int position,
-                                    @NonNull ChatMessageModel model) {
-
-        final String senderId = model.getSenderId();
-        final boolean fromMe = senderId != null && senderId.equals(myUid);
-
-        // --- Hiển thị bong bóng trái/phải như code cũ ---
-        if (fromMe) {
-            holder.leftChatLayout.setVisibility(View.GONE);
-            holder.rightChatLayout.setVisibility(View.VISIBLE);
-            holder.rightChatTextview.setText(model.getMessage());
-        } else {
-            holder.rightChatLayout.setVisibility(View.GONE);
-            holder.leftChatLayout.setVisibility(View.VISIBLE);
-            holder.leftChatTextview.setText(model.getMessage());
-        }
-
-        // --- Hiển thị tên người gửi cho team chat ---
-        if (!showSenderName) {
-            // Ẩn cả hai nếu không bật
-            if (holder.leftSenderName != null)  holder.leftSenderName.setVisibility(View.GONE);
-            if (holder.rightSenderName != null) holder.rightSenderName.setVisibility(View.GONE);
-            return;
-        }
-
-        // Nếu là mình: hiện "Bạn" phía phải (nếu có TextView), ẩn phía trái
-        if (fromMe) {
-            if (holder.leftSenderName != null)  holder.leftSenderName.setVisibility(View.GONE);
-            if (holder.rightSenderName != null) {
-                holder.rightSenderName.setText("Bạn");
-                holder.rightSenderName.setVisibility(View.VISIBLE);
-            }
-            return;
-        }
-
-        // Tin nhắn người khác: hiện tên phía trái (nếu có TextView), ẩn phía phải
-        if (holder.rightSenderName != null) holder.rightSenderName.setVisibility(View.GONE);
-        if (holder.leftSenderName == null) return; // không có view để hiện -> thoát
-
-        if (senderId == null || senderId.isEmpty()) {
-            holder.leftSenderName.setText("Unknown");
-            holder.leftSenderName.setVisibility(View.VISIBLE);
-            return;
-        }
-
-        // Có cache rồi
-        if (nameCache.containsKey(senderId)) {
-            holder.leftSenderName.setText(nameCache.get(senderId));
-            holder.leftSenderName.setVisibility(View.VISIBLE);
-            return;
-        }
-
-        // Chưa có -> lấy từ Firestore
-        // Ưu tiên docId == uid
-        FirebaseUtil.usersCollection()
-                .document(senderId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    String dn = extractDisplayName(doc);
-                    if (dn == null) {
-                        // Fallback whereEqualTo("uid", senderId)
-                        FirebaseUtil.usersCollection()
-                                .whereEqualTo("uid", senderId)
-                                .limit(1)
-                                .get()
-                                .addOnSuccessListener(snap -> {
-                                    String name = "Unknown";
-                                    if (!snap.isEmpty()) {
-                                        Users u = snap.getDocuments().get(0).toObject(Users.class);
-                                        name = makeDisplayName(u);
-                                        if (name == null || name.isEmpty()) name = "Unknown";
-                                    }
-                                    nameCache.put(senderId, name);
-                                    holder.leftSenderName.setText(name);
-                                    holder.leftSenderName.setVisibility(View.VISIBLE);
-                                })
-                                .addOnFailureListener(e -> {
-                                    nameCache.put(senderId, "Unknown");
-                                    holder.leftSenderName.setText("Unknown");
-                                    holder.leftSenderName.setVisibility(View.VISIBLE);
-                                });
-                    } else {
-                        nameCache.put(senderId, dn);
-                        holder.leftSenderName.setText(dn);
-                        holder.leftSenderName.setVisibility(View.VISIBLE);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    nameCache.put(senderId, "Unknown");
-                    holder.leftSenderName.setText("Unknown");
-                    holder.leftSenderName.setVisibility(View.VISIBLE);
-                });
-    }
-
-    private String extractDisplayName(DocumentSnapshot doc) {
-        if (doc != null && doc.exists()) {
-            Users u = doc.toObject(Users.class);
-            return makeDisplayName(u);
-        }
-        return null;
-    }
-
-    /** Ưu tiên username, fallback lastName + firstName */
-    private String makeDisplayName(Users u) {
-        if (u == null) return null;
-        if (u.getUsername() != null && !u.getUsername().trim().isEmpty())
-            return u.getUsername().trim();
-        String fn = u.getFirstName() != null ? u.getFirstName().trim() : "";
-        String ln = u.getLastName()  != null ? u.getLastName().trim()  : "";
-        String name = (ln + " " + fn).trim();
-        return name.isEmpty() ? null : name;
+    public void setChats(List<ChatEntity> chats) {
+        chatList.clear();
+        if (chats != null) chatList.addAll(chats);
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public ChatModelViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ChatViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(context)
                 .inflate(R.layout.chat_message_recycler_row, parent, false);
-        return new ChatModelViewHolder(view);
+        return new ChatViewHolder(view);
     }
 
-    class ChatModelViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
+        ChatEntity chat = chatList.get(position);
+        boolean fromMe = chat.senderId != null && chat.senderId.equals(myUid);
+
+        // --- Chat bubble logic ---
+        if (fromMe) {
+            holder.leftChatLayout.setVisibility(View.GONE);
+            holder.rightChatLayout.setVisibility(View.VISIBLE);
+            holder.rightChatText.setText(chat.message);
+        } else {
+            holder.rightChatLayout.setVisibility(View.GONE);
+            holder.leftChatLayout.setVisibility(View.VISIBLE);
+            holder.leftChatText.setText(chat.message);
+        }
+
+        // --- Show timestamp ---
+        String time = new SimpleDateFormat("HH:mm").format(new Date(chat.timestamp));
+        holder.leftChatTime.setText(time);
+        holder.rightChatTime.setText(time);
+
+        // --- Show sender name if enabled (team chat) ---
+        if (!showSenderName) {
+            if (holder.leftSenderName != null) holder.leftSenderName.setVisibility(View.GONE);
+            if (holder.rightSenderName != null) holder.rightSenderName.setVisibility(View.GONE);
+            return;
+        }
+
+        if (fromMe) {
+            if (holder.leftSenderName != null) holder.leftSenderName.setVisibility(View.GONE);
+            if (holder.rightSenderName != null) {
+                holder.rightSenderName.setVisibility(View.VISIBLE);
+                holder.rightSenderName.setText("You");
+                holder.rightSenderName.setTextColor(Color.parseColor("#1976D2"));
+            }
+        } else {
+            if (holder.rightSenderName != null) holder.rightSenderName.setVisibility(View.GONE);
+            if (holder.leftSenderName != null) {
+                holder.leftSenderName.setVisibility(View.VISIBLE);
+                String senderName = getCachedUserName(chat.senderId);
+                holder.leftSenderName.setText(senderName != null ? senderName : "Unknown");
+                holder.leftSenderName.setTextColor(Color.parseColor("#7B1FA2"));
+            }
+        }
+    }
+
+    private String getCachedUserName(String senderId) {
+        UserEntity cached = userCache.get(senderId);
+        if (cached != null && cached.fullName != null && !cached.fullName.isEmpty()) {
+            return cached.fullName;
+        }
+        // (Optional) If you have repository access here, you can fetch and cache later.
+        return null;
+    }
+
+    @Override
+    public int getItemCount() {
+        return chatList.size();
+    }
+
+    static class ChatViewHolder extends RecyclerView.ViewHolder {
 
         LinearLayout leftChatLayout, rightChatLayout;
-        TextView leftChatTextview, rightChatTextview;
-
-        // NEW: TextView hiển thị tên người gửi (tùy chọn)
+        TextView leftChatText, rightChatText;
+        TextView leftChatTime, rightChatTime;
         TextView leftSenderName, rightSenderName;
 
-        public ChatModelViewHolder(@NonNull View itemView) {
+        public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
-            leftChatLayout   = itemView.findViewById(R.id.left_chat_layout);
-            rightChatLayout  = itemView.findViewById(R.id.right_chat_layout);
-            leftChatTextview = itemView.findViewById(R.id.left_chat_textview);
-            rightChatTextview= itemView.findViewById(R.id.right_chat_textview);
-
-            // Nếu bạn chưa thêm vào layout, các view này sẽ = null (an toàn)
-            leftSenderName   = itemView.findViewById(R.id.left_sender_name);
-            rightSenderName  = itemView.findViewById(R.id.right_sender_name);
+            leftChatLayout = itemView.findViewById(R.id.left_chat_layout);
+            rightChatLayout = itemView.findViewById(R.id.right_chat_layout);
+            leftChatText = itemView.findViewById(R.id.left_chat_textview);
+            rightChatText = itemView.findViewById(R.id.right_chat_textview);
+            leftSenderName = itemView.findViewById(R.id.left_sender_name);
+            rightSenderName = itemView.findViewById(R.id.right_sender_name);
         }
     }
 }

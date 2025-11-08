@@ -11,19 +11,18 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.R;
-import models.Users;
+import com.example.prm392.models.UserEntity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.Locale;
 
 public class MemberSelectAdapter extends RecyclerView.Adapter<MemberSelectAdapter.ViewHolder> {
 
-    private List<Users> members;
-    private List<Integer> selectedUserIds;
-    private OnSelectionChangedListener listener;
+    private final List<UserEntity> members;
+    private final List<String> selectedUserIds;
+    private final OnSelectionChangedListener listener;
 
-    // Màu avatar ngẫu nhiên
     private final String[] avatarColors = {
             "#1976D2", "#388E3C", "#D32F2F", "#7B1FA2",
             "#F57C00", "#0097A7", "#C2185B", "#5D4037"
@@ -33,10 +32,18 @@ public class MemberSelectAdapter extends RecyclerView.Adapter<MemberSelectAdapte
         void onSelectionChanged(int count);
     }
 
-    public MemberSelectAdapter(List<Users> members, OnSelectionChangedListener listener) {
-        this.members = members;
+    public MemberSelectAdapter(List<UserEntity> members, OnSelectionChangedListener listener) {
+        this.members = members != null ? members : new ArrayList<>();
         this.selectedUserIds = new ArrayList<>();
         this.listener = listener;
+    }
+
+    public void updateMembers(List<UserEntity> newMembers) {
+        members.clear();
+        if (newMembers != null) {
+            members.addAll(newMembers);
+        }
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -49,51 +56,59 @@ public class MemberSelectAdapter extends RecyclerView.Adapter<MemberSelectAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Users user = members.get(position);
+        UserEntity user = members.get(position);
+        if (user == null) return;
 
-        // Hiển thị tên đầy đủ
-        String fullName = user.getFirstName() + " " + user.getLastName();
-        holder.tvMemberName.setText(fullName);
-        holder.tvMemberEmail.setText(user.getEmail());
+        // Display name
+        holder.tvMemberName.setText(
+                user.fullName != null && !user.fullName.isEmpty()
+                        ? user.fullName
+                        : "Unnamed User"
+        );
 
-        // Avatar với chữ cái đầu
-        String initial = user.getFirstName().substring(0, 1).toUpperCase();
+        holder.tvMemberEmail.setText(
+                user.email != null && !user.email.isEmpty()
+                        ? user.email
+                        : "No email"
+        );
+
+        // Avatar letter
+        String initial = user.fullName != null && !user.fullName.isEmpty()
+                ? user.fullName.substring(0, 1).toUpperCase(Locale.getDefault())
+                : "?";
         holder.tvAvatar.setText(initial);
 
-        // Màu ngẫu nhiên cho avatar
-        String color = avatarColors[position % avatarColors.length];
+        // Consistent color
+        int colorIndex = Math.abs((user.userId != null ? user.userId.hashCode() : position)) % avatarColors.length;
         holder.tvAvatar.setBackgroundResource(R.drawable.circle_avatar);
-        holder.tvAvatar.getBackground().setTint(Color.parseColor(color));
+        holder.tvAvatar.getBackground().setTint(Color.parseColor(avatarColors[colorIndex]));
 
-        // Set trạng thái checkbox
-        holder.cbMember.setChecked(selectedUserIds.contains(user.getId()));
+        // Checkbox logic
+        boolean isSelected = selectedUserIds.contains(user.userId);
+        holder.cbMember.setChecked(isSelected);
 
-        // Xử lý click
         holder.itemView.setOnClickListener(v -> {
-            holder.cbMember.setChecked(!holder.cbMember.isChecked());
-            handleSelection(user.getId(), holder.cbMember.isChecked());
+            boolean newState = !holder.cbMember.isChecked();
+            holder.cbMember.setChecked(newState);
+            handleSelection(user.userId, newState);
         });
 
-        holder.cbMember.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            handleSelection(user.getId(), isChecked);
-        });
+        holder.cbMember.setOnCheckedChangeListener((buttonView, isChecked) ->
+                handleSelection(user.userId, isChecked)
+        );
     }
 
-    private void handleSelection(int userId, boolean isSelected) {
+    private void handleSelection(String userId, boolean isSelected) {
+        if (userId == null) return;
         if (isSelected) {
-            if (!selectedUserIds.contains(userId)) {
-                selectedUserIds.add(userId);
-            }
+            if (!selectedUserIds.contains(userId)) selectedUserIds.add(userId);
         } else {
-            selectedUserIds.remove(Integer.valueOf(userId));
+            selectedUserIds.remove(userId);
         }
-
-        if (listener != null) {
-            listener.onSelectionChanged(selectedUserIds.size());
-        }
+        if (listener != null) listener.onSelectionChanged(selectedUserIds.size());
     }
 
-    public List<Integer> getSelectedUserIds() {
+    public List<String> getSelectedUserIds() {
         return new ArrayList<>(selectedUserIds);
     }
 

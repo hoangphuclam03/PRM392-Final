@@ -1,6 +1,7 @@
 package com.example.prm392.data.local;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
@@ -20,9 +21,26 @@ public interface TaskDAO {
     @Query("SELECT * FROM tasks WHERE assignedTo = :userId")
     List<TaskEntity> getTasksByUser(String userId);
 
+    @Query("SELECT * FROM tasks WHERE taskId = :taskId LIMIT 1")
+    TaskEntity getTaskById(String taskId);
+
     @Query("SELECT * FROM tasks WHERE isPendingSync = 1")
     List<TaskEntity> getPendingSyncTasks();
 
+    @Query("SELECT * FROM tasks WHERE dueDate BETWEEN :startDate AND :endDate ORDER BY dueDate ASC")
+    List<TaskEntity> getTasksBetweenDates(String startDate, String endDate);
+
+    @Query("UPDATE tasks SET status = :status WHERE taskId = :taskId")
+    void updateTaskStatus(String taskId, String status);
+
+    @Query("SELECT * FROM tasks ORDER BY dueDate DESC")
+    List<TaskEntity> getAllTasks();
+
+    @Query("UPDATE tasks SET pendingSync = 0, lastSyncedAt = :timestamp WHERE taskId = :taskId")
+    void markSynced(String taskId, long timestamp);
+
+    @Delete
+    void delete(TaskEntity task);
     @Query("DELETE FROM tasks")
     void clearAll();
 }

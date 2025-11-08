@@ -9,17 +9,19 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.R;
+import com.example.prm392.models.CalendarEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import models.CalendarEvents;
-
 public class TaskEventAdapter extends RecyclerView.Adapter<TaskEventAdapter.VH> {
 
-    private final List<CalendarEvents> list = new ArrayList<>();
+    private final List<CalendarEvent> list = new ArrayList<>();
 
-    public void submit(List<CalendarEvents> data) {
+    /**
+     * Submit new data to the adapter. Clears old data and refreshes RecyclerView.
+     */
+    public void submit(List<CalendarEvent> data) {
         list.clear();
         if (data != null) list.addAll(data);
         notifyDataSetChanged();
@@ -34,17 +36,20 @@ public class TaskEventAdapter extends RecyclerView.Adapter<TaskEventAdapter.VH> 
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH holder, int pos) {
-        CalendarEvents ev = list.get(pos);
-        holder.tvTaskId.setText("Task ID: " + ev.getTaskId());
-        holder.tvEventDate.setText("Date: " + ev.getEventDate());
+    public void onBindViewHolder(@NonNull VH holder, int position) {
+        CalendarEvent ev = list.get(position);
+        holder.tvTaskId.setText("Task ID: " + ev.taskId);
+        holder.tvEventDate.setText("Date: " + ev.eventDate);
     }
 
     @Override
-    public int getItemCount() { return list.size(); }
+    public int getItemCount() {
+        return list.size();
+    }
 
     static class VH extends RecyclerView.ViewHolder {
         TextView tvTaskId, tvEventDate;
+
         public VH(@NonNull View itemView) {
             super(itemView);
             tvTaskId = itemView.findViewById(R.id.tvTaskId);

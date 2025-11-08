@@ -1,4 +1,4 @@
-package com.example.prm392;
+package com.example.prm392.activities;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
