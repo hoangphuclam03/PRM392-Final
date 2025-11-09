@@ -1,4 +1,5 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -41,7 +42,7 @@
             android:layout_height="wrap_content"
             android:text="Edit"
             android:textSize="13sp"
-            android:paddingHorizontal="12dp" />
+            android:paddingHorizontal="12dp"/>
 
         <Button
             android:id="@+id/btnDelete"
@@ -50,6 +51,6 @@
             android:text="Delete"
             android:textSize="13sp"
             android:layout_marginStart="8dp"
-            android:paddingHorizontal="12dp" />
+            android:paddingHorizontal="12dp"/>
     </LinearLayout>
 </LinearLayout>

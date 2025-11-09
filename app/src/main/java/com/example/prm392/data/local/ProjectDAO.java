@@ -22,6 +22,7 @@ public interface ProjectDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertOrUpdate(ProjectEntity project);
 
+    @Query("SELECT * FROM projects ORDER BY updatedAt DESC")
     @Update
     void update(ProjectEntity project);
 
@@ -46,14 +47,23 @@ public interface ProjectDAO {
     @Query("SELECT * FROM projects WHERE projectId = :projectId LIMIT 1")
     ProjectEntity getProjectById(String projectId);
 
+    @Query("SELECT * FROM projects WHERE createdBy = :userId OR ownerId = :userId ORDER BY updatedAt DESC")
+    List<ProjectEntity> getProjectsByUser(String userId);
     @Query("SELECT * FROM projects WHERE projectName LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'")
     List<ProjectEntity> searchProjects(String query);
+
+    @Query("DELETE FROM projects")
+    void clearAll();
+
+    @Query("UPDATE projects SET pendingSync = 0, lastSyncedAt = :timestamp WHERE projectId = :projectId")
+    void markSynced(String projectId, long timestamp);
 
     @Query("SELECT * FROM projects WHERE pendingSync = 1")
     List<ProjectEntity> getPendingProjects();
 
-    @Query("UPDATE projects SET pendingSync = 0, lastSyncedAt = :timestamp WHERE projectId = :projectId")
-    void markSynced(String projectId, long timestamp);
+    // ✅ Thêm hàm này để SyncRepository có thể gọi được
+    @Query("DELETE FROM projects WHERE projectId = :projectId")
+    void deleteById(String projectId);
 
     @Query("SELECT * FROM projects WHERE isPublic = 1 ORDER BY updatedAt DESC")
     List<ProjectEntity> getPublicProjects();
