@@ -67,14 +67,12 @@ public interface ProjectDAO {
     List<ProjectEntity> getProjectsByOwner(String ownerId);
 
     @Query("""
-SELECT p.*
-FROM projects p
-JOIN project_members m ON p.projectId = m.projectId
-WHERE m.userId = :uid
-ORDER BY p.updatedAt DESC
+SELECT p.* FROM projects p
+INNER JOIN project_members m ON p.projectId = m.projectId
+WHERE m.userId = :userId
+ORDER BY p.createdAt DESC
 """)
-    LiveData<List<ProjectEntity>> getJoinedProjectsLive(String uid);
-
+    List<ProjectEntity> getAllJoinedBy(String userId);
     @Delete
     void delete(ProjectEntity project);
     @Query("SELECT * FROM projects")

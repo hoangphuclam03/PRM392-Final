@@ -22,18 +22,20 @@ import java.util.concurrent.Executors;
 
 public class SyncRepository {
 
+    private final Context context;
     private final AppDatabase localDb;
     private final FirebaseFirestore remoteDb;
     private final ExecutorService executor;
 
     public SyncRepository(Context context) {
+        this.context = context;   // ✅ Fix missing context
         this.localDb = AppDatabase.getInstance(context);
         this.remoteDb = FirebaseFirestore.getInstance();
         this.executor = Executors.newSingleThreadExecutor();
     }
 
     // =============================================================
-    // 🔁 MASTER SYNC - GỌI TOÀN BỘ CÁC HÀM ĐỒNG BỘ
+    // 🔁 SYNC ALL
     // =============================================================
     public void syncAll() {
         executor.execute(() -> {
@@ -44,7 +46,7 @@ public class SyncRepository {
                 syncMembersFromFirestore();
                 syncTasksToFirestore();
                 syncTasksFromFirestore();
-                syncUsersFromFirestore(); // 🔥 NEW: pulls all users into local Room
+                syncUsersFromFirestore();
             } catch (Exception e) {
                 Log.e("SyncRepo", "❌ syncAll failed: " + e.getMessage(), e);
             }
@@ -55,82 +57,135 @@ public class SyncRepository {
     // 🔹 PROJECTS
     // =============================================================
     public void syncProjectsToFirestore() {
-        List<ProjectEntity> pendingProjects = localDb.projectDAO().getPendingProjects();
-        if (pendingProjects == null || pendingProjects.isEmpty()) return;
+        List<ProjectEntity> pending = localDb.projectDAO().getPendingProjects();
+        if (pending == null || pending.isEmpty()) return;
 
-        Log.d("SyncRepo", "⬆ Uploading " + pendingProjects.size() + " projects → Firestore");
-
-        for (ProjectEntity project : pendingProjects) {
-            if (project.projectId == null || project.projectId.trim().isEmpty()) {
-                project.projectId = UUID.randomUUID().toString();
-                executor.execute(() -> localDb.projectDAO().insertOrUpdate(project));
-                Log.w("SyncRepo", "Generated missing ID for " + project.projectName);
+        for (ProjectEntity p : pending) {
+            if (p.projectId == null || p.projectId.trim().isEmpty()) {
+                p.projectId = UUID.randomUUID().toString();
+                localDb.projectDAO().insertOrUpdate(p);
             }
 
-            final String pid = project.projectId;
-
             remoteDb.collection("projects")
-                    .document(pid)
-                    .set(project, SetOptions.merge())
-                    .addOnSuccessListener(a -> executor.execute(() -> {
-                        localDb.projectDAO().markSynced(pid, System.currentTimeMillis());
-                        Log.d("SyncRepo", "✅ Synced project " + project.projectName);
-                    }))
+                    .document(p.projectId)
+                    .set(p, SetOptions.merge())
+                    .addOnSuccessListener(a -> executor.execute(() ->
+                            localDb.projectDAO().markSynced(p.projectId, System.currentTimeMillis())
+                    ))
                     .addOnFailureListener(e ->
-                            Log.e("SyncRepo", "❌ Failed to upload project " + project.projectName, e)
+                            Log.e("SyncRepo", "❌ Upload project failed", e)
                     );
         }
     }
-
-    public void syncProjectsFromFirestore() {
+    public void refreshProjectsFromFirestore() {
         remoteDb.collection("projects")
                 .get()
                 .addOnSuccessListener(snapshot -> executor.execute(() -> {
                     try {
-                        for (QueryDocumentSnapshot doc : snapshot) {
-                            ProjectEntity project = doc.toObject(ProjectEntity.class);
-                            if (project.projectId == null)
-                                project.projectId = doc.getId();
-                            localDb.projectDAO().insertOrUpdate(project);
+                        // Xoá sạch local để nạp mới
+                        localDb.projectDAO().clearAll();
+
+                        if (snapshot == null || snapshot.isEmpty()) {
+                            Log.d("SyncRepo", "Firestore 'projects' trống → đã clear Room");
+                            return;
                         }
-                        Log.d("SyncRepo", "✅ Pulled projects from Firestore → Room");
+
+                        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshot) {
+                            ProjectEntity p = doc.toObject(ProjectEntity.class);
+                            if (p.projectId == null || p.projectId.trim().isEmpty()) {
+                                p.projectId = doc.getId();
+                            }
+                            localDb.projectDAO().insertOrUpdate(p);
+                        }
+                        Log.d("SyncRepo", "Refreshed projects Firestore → Room OK");
                     } catch (Exception e) {
-                        Log.e("SyncRepo", "❌ Error inserting Firestore projects", e);
+                        Log.e("SyncRepo", "Error refreshing projects", e);
+                    }
+                }))
+                .addOnFailureListener(e -> Log.e("SyncRepo", "Firestore refresh failed", e));
+    }
+
+    // =============================================================
+// 🗑 XOÁ PROJECT + TẤT CẢ MEMBERS (Firestore + Room)
+// =============================================================
+    public void deleteProjectAndMembers(String projectId) {
+        Log.d("SyncRepo", "deleteProjectAndMembers → " + projectId);
+
+        // 1) Xoá members trên Firestore
+        remoteDb.collection("project_members")
+                .whereEqualTo("projectId", projectId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    snapshot.getDocuments().forEach(d ->
+                            d.getReference().delete()
+                                    .addOnSuccessListener(v ->
+                                            Log.d("SyncRepo", "Deleted member " + d.getId()))
+                                    .addOnFailureListener(err ->
+                                            Log.e("SyncRepo", "Delete member failed " + d.getId(), err))
+                    );
+
+                    // 2) Xoá project doc trên Firestore
+                    remoteDb.collection("projects")
+                            .document(projectId)
+                            .delete()
+                            .addOnSuccessListener(v -> {
+                                Log.d("SyncRepo", "Deleted project doc " + projectId);
+
+                                // 3) Xoá local trong Room
+                                executor.execute(() -> {
+                                    try {
+                                        localDb.projectMemberDAO().deleteByProject(projectId);
+                                        localDb.projectDAO().deleteById(projectId);
+                                        Log.d("SyncRepo", "Deleted local project + members " + projectId);
+                                    } catch (Exception e) {
+                                        Log.e("SyncRepo", "Error deleting local data", e);
+                                    }
+                                });
+                            })
+                            .addOnFailureListener(err ->
+                                    Log.e("SyncRepo", "Delete project doc failed " + projectId, err));
+                })
+                .addOnFailureListener(err ->
+                        Log.e("SyncRepo", "Fetch members to delete failed for " + projectId, err));
+    }
+    public void syncProjectsFromFirestore() {
+        remoteDb.collection("projects")
+                .get()
+                .addOnSuccessListener(snapshot -> executor.execute(() -> {
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        ProjectEntity p = doc.toObject(ProjectEntity.class);
+                        if (p.projectId == null) p.projectId = doc.getId();
+                        localDb.projectDAO().insertOrUpdate(p);
                     }
                 }))
                 .addOnFailureListener(e ->
-                        Log.e("SyncRepo", "❌ Fetch Firestore projects failed", e)
+                        Log.e("SyncRepo", "❌ Fetch projects failed", e)
                 );
     }
 
     // =============================================================
-    // 🔹 PROJECT MEMBERS
+    // 🔹 MEMBERS
     // =============================================================
     public void syncMembersToFirestore() {
-        List<ProjectMemberEntity> pendingMembers = localDb.projectMemberDAO().getPendingMembers();
-        if (pendingMembers == null || pendingMembers.isEmpty()) return;
+        List<ProjectMemberEntity> members = localDb.projectMemberDAO().getPendingMembers();
+        if (members == null || members.isEmpty()) return;
 
-        Log.d("SyncRepo", "⬆ Uploading " + pendingMembers.size() + " members → Firestore");
-
-        for (ProjectMemberEntity member : pendingMembers) {
-            if (member.memberId == null || member.memberId.trim().isEmpty()) {
-                member.memberId = UUID.randomUUID().toString();
-                executor.execute(() -> localDb.projectMemberDAO().insertOrUpdate(member));
+        for (ProjectMemberEntity m : members) {
+            if (m.memberId == null || m.memberId.trim().isEmpty()) {
+                m.memberId = UUID.randomUUID().toString();
+                localDb.projectMemberDAO().insertOrUpdate(m);
             }
 
-            final String mid = member.memberId;
-
             remoteDb.collection("project_members")
-                    .document(mid)
-                    .set(member, SetOptions.merge())
+                    .document(m.memberId)
+                    .set(m, SetOptions.merge())
                     .addOnSuccessListener(a -> executor.execute(() -> {
-                        member.pendingSync = false;
-                        member.updatedAt = System.currentTimeMillis();
-                        localDb.projectMemberDAO().insertOrUpdate(member);
-                        Log.d("SyncRepo", "✅ Synced member " + member.fullName + " (" + member.role + ")");
+                        m.pendingSync = false;
+                        m.updatedAt = System.currentTimeMillis();
+                        localDb.projectMemberDAO().insertOrUpdate(m);
                     }))
                     .addOnFailureListener(e ->
-                            Log.e("SyncRepo", "❌ Failed to upload member " + member.fullName, e)
+                            Log.e("SyncRepo", "❌ Upload member failed", e)
                     );
         }
     }
@@ -139,20 +194,14 @@ public class SyncRepository {
         remoteDb.collection("project_members")
                 .get()
                 .addOnSuccessListener(snapshot -> executor.execute(() -> {
-                    try {
-                        for (QueryDocumentSnapshot doc : snapshot) {
-                            ProjectMemberEntity member = doc.toObject(ProjectMemberEntity.class);
-                            if (member.memberId == null)
-                                member.memberId = doc.getId();
-                            localDb.projectMemberDAO().insertOrUpdate(member);
-                        }
-                        Log.d("SyncRepo", "✅ Pulled members from Firestore → Room");
-                    } catch (Exception e) {
-                        Log.e("SyncRepo", "❌ Error inserting Firestore members", e);
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        ProjectMemberEntity m = doc.toObject(ProjectMemberEntity.class);
+                        if (m.memberId == null) m.memberId = doc.getId();
+                        localDb.projectMemberDAO().insertOrUpdate(m);
                     }
                 }))
                 .addOnFailureListener(e ->
-                        Log.e("SyncRepo", "❌ Fetch Firestore members failed", e)
+                        Log.e("SyncRepo", "❌ Fetch members failed", e)
                 );
     }
 
@@ -160,28 +209,23 @@ public class SyncRepository {
     // 🔹 TASKS
     // =============================================================
     public void syncTasksToFirestore() {
-        List<TaskEntity> pendingTasks = localDb.taskDAO().getPendingSyncTasks();
-        if (pendingTasks == null || pendingTasks.isEmpty()) return;
+        List<TaskEntity> tasks = localDb.taskDAO().getPendingSyncTasks();
+        if (tasks == null || tasks.isEmpty()) return;
 
-        Log.d("SyncRepo", "⬆ Uploading " + pendingTasks.size() + " tasks → Firestore");
-
-        for (TaskEntity task : pendingTasks) {
-            if (task.taskId == null || task.taskId.trim().isEmpty()) {
-                task.taskId = UUID.randomUUID().toString();
-                executor.execute(() -> localDb.taskDAO().insertOrUpdate(task));
+        for (TaskEntity t : tasks) {
+            if (t.taskId == null || t.taskId.trim().isEmpty()) {
+                t.taskId = UUID.randomUUID().toString();
+                localDb.taskDAO().insertOrUpdate(t);
             }
 
-            final String tid = task.taskId;
-
             remoteDb.collection("tasks")
-                    .document(tid)
-                    .set(task, SetOptions.merge())
-                    .addOnSuccessListener(a -> executor.execute(() -> {
-                        localDb.taskDAO().markSynced(tid, System.currentTimeMillis());
-                        Log.d("SyncRepo", "✅ Synced task " + task.title);
-                    }))
+                    .document(t.taskId)
+                    .set(t, SetOptions.merge())
+                    .addOnSuccessListener(a -> executor.execute(() ->
+                            localDb.taskDAO().markSynced(t.taskId, System.currentTimeMillis())
+                    ))
                     .addOnFailureListener(e ->
-                            Log.e("SyncRepo", "❌ Failed to upload task " + task.title, e)
+                            Log.e("SyncRepo", "❌ Upload task failed", e)
                     );
         }
     }
@@ -190,147 +234,54 @@ public class SyncRepository {
         remoteDb.collection("tasks")
                 .get()
                 .addOnSuccessListener(snapshot -> executor.execute(() -> {
-                    try {
-                        for (QueryDocumentSnapshot doc : snapshot) {
-                            TaskEntity task = doc.toObject(TaskEntity.class);
-                            if (task.taskId == null)
-                                task.taskId = doc.getId();
-                            localDb.taskDAO().insertOrUpdate(task);
-                        }
-                        Log.d("SyncRepo", "✅ Pulled tasks from Firestore → Room");
-                    } catch (Exception e) {
-                        Log.e("SyncRepo", "❌ Error inserting Firestore tasks", e);
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        TaskEntity t = doc.toObject(TaskEntity.class);
+                        if (t.taskId == null) t.taskId = doc.getId();
+                        localDb.taskDAO().insertOrUpdate(t);
                     }
                 }))
                 .addOnFailureListener(e ->
-                        Log.e("SyncRepo", "❌ Fetch Firestore tasks failed", e)
+                        Log.e("SyncRepo", "❌ Fetch tasks failed", e)
                 );
     }
 
     // =============================================================
-    // 🔹 USERS (NEW)
+    // 🔹 USERS
     // =============================================================
     public void syncUsersFromFirestore() {
         remoteDb.collection("Users")
                 .get()
                 .addOnSuccessListener(snapshot -> executor.execute(() -> {
-                    try {
-                        UserDAO userDAO = localDb.userDAO();
 
-                        // 1️⃣ Get all current local users
-                        List<UserEntity> localUsers = userDAO.getAll();
+                    UserDAO userDAO = localDb.userDAO();
+                    List<UserEntity> localUsers = userDAO.getAll();
+                    List<String> firestoreIds = new ArrayList<>();
 
-                        // 2️⃣ Build list of Firestore userIds
-                        List<String> firestoreIds = new ArrayList<>();
-                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                            firestoreIds.add(doc.getId());
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        firestoreIds.add(doc.getId());
 
-                            // Convert Firestore doc → UserEntity
-                            UserEntity user = new UserEntity();
-                            user.userId = doc.getId();
-                            user.fullName = doc.getString("fullName");
-                            user.email = doc.getString("email");
-                            user.avatarUrl = doc.getString("avatarUrl");
-                            user.password = ""; // never sync password
-                            Long lastLogin = doc.getLong("lastLogin");
-                            user.lastLogin = lastLogin != null ? lastLogin : 0L;
+                        UserEntity u = new UserEntity();
+                        u.userId = doc.getId();
+                        u.fullName = doc.getString("fullName");
+                        u.email = doc.getString("email");
+                        u.avatarUrl = doc.getString("avatarUrl");
+                        u.password = "";
 
-                            userDAO.insertOrUpdate(user);
-                        }
+                        Long lastLogin = doc.getLong("lastLogin");
+                        u.lastLogin = lastLogin == null ? 0L : lastLogin;
 
-                        // 3️⃣ Delete local users not found in Firestore
-                        for (UserEntity localUser : localUsers) {
-                            if (!firestoreIds.contains(localUser.userId)) {
-                                userDAO.deleteUser(localUser.userId);
-                                Log.d("SyncRepo", "🗑 Deleted local user not in Firestore: " + localUser.userId);
-                            }
-                        }
-
-                        Log.d("SyncRepo", "✅ Synced " + snapshot.size() + " users from Firestore → Room (with cleanup)");
-                    } catch (Exception e) {
-                        Log.e("SyncRepo", "❌ Error syncing users from Firestore", e);
+                        userDAO.insertOrUpdate(u);
                     }
+
+                    for (UserEntity u : localUsers) {
+                        if (!firestoreIds.contains(u.userId)) {
+                            userDAO.deleteUser(u.userId);
+                        }
+                    }
+
                 }))
                 .addOnFailureListener(e ->
-                        Log.e("SyncRepo", "❌ Fetch Firestore users failed", e)
+                        Log.e("SyncRepo", "❌ Fetch users failed", e)
                 );
-    }
-
-
-    // =============================================================
-    // 🔄 HARD REFRESH — luôn kéo dữ liệu mới nhất từ Firestore về Room
-    // =============================================================
-    public void refreshProjectsFromFirestore() {
-        remoteDb.collection("projects")
-                .get()
-                .addOnSuccessListener(snapshot -> executor.execute(() -> {
-                    try {
-                        localDb.projectDAO().clearAll();
-
-                        if (snapshot == null || snapshot.isEmpty()) {
-                            Log.d("SyncRepo", "⚠️ Firestore empty, cleared local Room");
-                            return;
-                        }
-
-                        for (QueryDocumentSnapshot doc : snapshot) {
-                            ProjectEntity project = doc.toObject(ProjectEntity.class);
-                            if (project.projectId == null)
-                                project.projectId = doc.getId();
-                            localDb.projectDAO().insertOrUpdate(project);
-                        }
-                        Log.d("SyncRepo", "✅ Refreshed projects from Firestore → Room");
-                    } catch (Exception e) {
-                        Log.e("SyncRepo", "❌ Error refreshing Firestore projects", e);
-                    }
-                }))
-                .addOnFailureListener(e ->
-                        Log.e("SyncRepo", "❌ Firestore refresh failed", e)
-                );
-    }
-
-    // =============================================================
-    // 🗑 DELETE PROJECT + ALL MEMBERS
-    // =============================================================
-    public void deleteProjectAndMembers(String projectId) {
-        Log.d("SyncRepo", "🧩 deleteProjectAndMembers CALLED with projectId = " + projectId);
-
-        remoteDb.collection("project_members")
-                .whereEqualTo("projectId", projectId)
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    for (QueryDocumentSnapshot doc : snapshot) {
-                        doc.getReference().delete();
-                        Log.d("SyncRepo", "🗑 Deleted member: " + doc.getId());
-                    }
-                    Log.d("SyncRepo", "✅ Deleted all members for project " + projectId);
-
-                    remoteDb.collection("projects")
-                            .document(projectId)
-                            .delete()
-                            .addOnSuccessListener(a -> {
-                                Log.d("SyncRepo", "✅ Deleted project doc " + projectId);
-
-                                executor.execute(() -> {
-                                    try {
-                                        localDb.projectDAO().deleteById(projectId);
-                                        localDb.projectMemberDAO().deleteByProject(projectId);
-                                        Log.d("SyncRepo", "✅ Deleted local project + members " + projectId);
-                                    } catch (Exception e) {
-                                        Log.e("SyncRepo", "❌ Error deleting local data", e);
-                                    }
-                                });
-                            })
-                            .addOnFailureListener(e ->
-                                    Log.e("SyncRepo", "❌ Failed delete project doc " + projectId, e)
-                            );
-
-                })
-                .addOnFailureListener(e ->
-                        Log.e("SyncRepo", "❌ Failed delete project members for " + projectId, e)
-                );
-    }
-
-    public FirebaseFirestore getRemoteDb() {
-        return remoteDb;
     }
 }

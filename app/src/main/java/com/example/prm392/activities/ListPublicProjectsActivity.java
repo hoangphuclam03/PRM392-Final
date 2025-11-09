@@ -17,7 +17,6 @@ import com.example.prm392.adapter.PublicProjectAdapter;
 import com.example.prm392.data.local.AppDatabase;
 import com.example.prm392.data.local.ProjectDAO;
 import com.example.prm392.models.ProjectEntity;
-import com.example.prm392.utils.FirebaseUtil;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -42,65 +41,40 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_public_project);
 
-        // ---------------- ÁNH XẠ VIEW ----------------
         recyclerView = findViewById(R.id.recyclerMembers);
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // ---------------- SETUP DRAWER TOGGLE ----------------
         toggle = new ActionBarDrawerToggle(
-                this,
-                drawerLayout,
-                toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close
-        );
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // ---------------- INIT DATABASE ----------------
         projectDAO = AppDatabase.getInstance(this).projectDAO();
 
-        // ---------------- LOAD PROJECTS ----------------
-        loadProjects();
+        loadAllPublicProjects();
 
-        // ---------------- MENU NAVIGATION ----------------
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-
-            if (id == R.id.nav_global_search) {
-                startActivity(new Intent(this, GlobalSearchActivity.class));
-            } else if (id == R.id.nav_home) {
+            if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
-            } else if (id == R.id.nav_profile) {
-                startActivity(new Intent(this, UserProfileActivity.class));
             } else if (id == R.id.nav_chat) {
                 startActivity(new Intent(this, ChatActivity.class));
-            } else if (id == R.id.nav_project) {
-                startActivity(new Intent(this, ListYourProjectsActivity.class));
-            } else if (id == R.id.nav_my_tasks) {
-                startActivity(new Intent(this, ListTasksActivity.class));
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
-            } else if (id == R.id.nav_calendar) {
-                startActivity(new Intent(this, CalendarEventsActivity.class));
             } else if (id == R.id.nav_logout) {
                 FirebaseAuth.getInstance().signOut();
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
             }
-
             drawerLayout.closeDrawers();
             return true;
         });
     }
 
-    // ---------------- LOAD PROJECTS ----------------
-    private void loadProjects() {
+    private void loadAllPublicProjects() {
         executor.execute(() -> {
-
             List<ProjectEntity> projects = projectDAO.getPublicProjects();
 
             runOnUiThread(() -> {
@@ -108,23 +82,11 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
                     Toast.makeText(this, "Chưa có dự án công khai.", Toast.LENGTH_SHORT).show();
                 }
 
-                adapter = new PublicProjectAdapter(projects, new PublicProjectAdapter.OnProjectClickListener() {
-
-                    // ✅ CLICK → MỞ CHAT (ONLY)
-                    @Override
-                    public void onItemClick(ProjectEntity project) {
-
-                        Intent it = new Intent(ListPublicProjectsActivity.this, ChatActivity.class);
-                        it.putExtra("teamId", project.projectId);
-                        it.putExtra("teamName", project.projectName);
-                        startActivity(it);
-                    }
-
-                    // ✅ Không dùng nữa → để trống
-                    @Override
-                    public void onRequestJoinClick(ProjectEntity project) {
-                        // BỎ HOÀN TOÀN JOIN
-                    }
+                adapter = new PublicProjectAdapter(projects, project -> {
+                    Intent i = new Intent(this, ChatActivity.class);
+                    i.putExtra("projectId", project.projectId);
+                    i.putExtra("projectName", project.projectName);
+                    startActivity(i);
                 });
 
                 recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -136,7 +98,7 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadProjects();
+        loadAllPublicProjects();
     }
 
     @Override
