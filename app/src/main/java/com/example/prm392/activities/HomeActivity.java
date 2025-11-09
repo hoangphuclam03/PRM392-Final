@@ -135,6 +135,9 @@ public class HomeActivity extends AppCompatActivity {
         toggle.syncState();
 
         navigationView.setCheckedItem(R.id.nav_home);
+
+        // ✅ Make global search non-checkable so it doesn’t stay highlighted
+        navigationView.getMenu().findItem(R.id.nav_global_search).setCheckable(false);
     }
 
     private void setupNavigation() {
@@ -142,32 +145,27 @@ public class HomeActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_global_search) {
-                Intent intent = new Intent(HomeActivity.this, GlobalSearchActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(this, GlobalSearchActivity.class));
             } else if (id == R.id.nav_home) {
                 recreate();
             }
             else if (id == R.id.nav_profile) {
-                Intent intent = new Intent(HomeActivity.this, UserProfileActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(this, UserProfileActivity.class));
             }
             else if (id == R.id.nav_chat) {
-                startActivity(new Intent(HomeActivity.this, ChatActivity.class));
+                startActivity(new Intent(this, ChatActivity.class));
             }
             else if (id == R.id.nav_project) {
-                startActivity(new Intent(HomeActivity.this, ListYourProjectsActivity.class));
+                startActivity(new Intent(this, ListYourProjectsActivity.class));
             }
             else if (id == R.id.nav_my_tasks) {
-                Intent intent = new Intent(HomeActivity.this, ListTasksActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(this, ListTasksActivity.class)); // 🔹 adjust activity name if different
             }
-
-
             else if (id == R.id.nav_settings) {
-                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+                startActivity(new Intent(this, SettingsActivity.class));
             }
             else if (id == R.id.nav_calendar) {
-                startActivity(new Intent(HomeActivity.this, CalendarEventsActivity.class));
+                startActivity(new Intent(this, CalendarEventsActivity.class));
             }
             else if (id == R.id.nav_logout) {
                 logoutUser();
