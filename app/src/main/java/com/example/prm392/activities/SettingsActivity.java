@@ -24,7 +24,6 @@ public class SettingsActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private FirebaseAuth mAuth;
     private SharedPreferences preferences;
-
     private static final String PREFS_NAME = "app_settings";
     private static final String KEY_DARK_THEME = "dark_theme";
     private static final String KEY_TIME_FORMAT_24H = "time_format_24h";
@@ -35,7 +34,6 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(new Intent(this, MainActivity.class));
         finish();
     }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // ---------------- Apply saved dark theme BEFORE super.onCreate ----------------
@@ -52,10 +50,10 @@ public class SettingsActivity extends AppCompatActivity {
         switchDarkTheme = findViewById(R.id.switchDarkTheme);
         switchTimeFormat = findViewById(R.id.switchTimeFormat);
         switchNotifications = findViewById(R.id.switchNotifications);
+
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
-        mAuth = FirebaseAuth.getInstance();
 
         setSupportActionBar(toolbar);
 
@@ -66,13 +64,34 @@ public class SettingsActivity extends AppCompatActivity {
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // ---------------- Navigation Drawer Setup ----------------
-        setupNavigation();
+        // ---------------- Navigation Drawer ----------------
 
-        // Mark the current page
-        navigationView.setCheckedItem(R.id.nav_settings);
-        // Make global search not checkable
-        navigationView.getMenu().findItem(R.id.nav_global_search).setCheckable(false);
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_global_search) {
+                startActivity(new Intent(this, GlobalSearchActivity.class));
+            } else if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+            } else if (id == R.id.nav_profile) {
+                startActivity(new Intent(this, UserProfileActivity.class));
+            } else if (id == R.id.nav_chat) {
+                startActivity(new Intent(this, ChatActivity.class));
+            } else if (id == R.id.nav_project) {
+                startActivity(new Intent(this, ListYourProjectsActivity.class));
+            } else if (id == R.id.nav_my_tasks) {
+                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
+            } else if (id == R.id.nav_settings) {
+                drawerLayout.closeDrawers(); // already here
+            } else if (id == R.id.nav_calendar) {
+                startActivity(new Intent(this, CalendarEventsActivity.class));
+            } else if (id == R.id.nav_logout) {
+                logoutUser();
+            }
+
+            drawerLayout.closeDrawers();
+            return true;
+        });
 
         // ---------------- Load Saved Settings ----------------
         switchDarkTheme.setChecked(preferences.getBoolean(KEY_DARK_THEME, false));
@@ -87,46 +106,20 @@ public class SettingsActivity extends AppCompatActivity {
             AppCompatDelegate.setDefaultNightMode(
                     isChecked ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
             );
-            recreate(); // apply instantly
+            // Recreate the activity to apply theme instantly
+            recreate();
         });
 
         // 12h/24h Time Format
         switchTimeFormat.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferences.edit().putBoolean(KEY_TIME_FORMAT_24H, isChecked).apply();
+            // Optional: update any displayed time format
         });
 
-        // Notifications
+        // All Notifications
         switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferences.edit().putBoolean(KEY_ALL_NOTIFICATIONS, isChecked).apply();
-        });
-    }
-
-    private void setupNavigation() {
-        navigationView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.nav_global_search) {
-                startActivity(new Intent(SettingsActivity.this, GlobalSearchActivity.class));
-            } else if (id == R.id.nav_home) {
-                startActivity(new Intent(SettingsActivity.this, HomeActivity.class));
-            } else if (id == R.id.nav_profile) {
-                startActivity(new Intent(SettingsActivity.this, UserProfileActivity.class));
-            } else if (id == R.id.nav_chat) {
-                startActivity(new Intent(SettingsActivity.this, ChatActivity.class));
-            } else if (id == R.id.nav_project) {
-                startActivity(new Intent(SettingsActivity.this, ListYourProjectsActivity.class));
-            } else if (id == R.id.nav_my_tasks) {
-                startActivity(new Intent(SettingsActivity.this, ListTasksActivity.class)); // update if needed
-            } else if (id == R.id.nav_settings) {
-                drawerLayout.closeDrawers(); // already here
-            } else if (id == R.id.nav_calendar) {
-                startActivity(new Intent(SettingsActivity.this, CalendarEventsActivity.class));
-            } else if (id == R.id.nav_logout) {
-                logoutUser();
-            }
-
-            drawerLayout.closeDrawers();
-            return true;
+            // Optional: enable/disable notification channels
         });
     }
 }

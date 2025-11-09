@@ -1,5 +1,6 @@
 package com.example.prm392.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
@@ -14,6 +15,7 @@ import com.example.prm392.R;
 import com.example.prm392.adapter.CalendarTaskAdapter;
 import com.example.prm392.data.local.AppDatabase;
 import com.example.prm392.models.TaskEntity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 import androidx.appcompat.widget.Toolbar;
@@ -125,22 +127,29 @@ public class CalendarEventsActivity extends AppCompatActivity {
     private void setupNavigation() {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                startActivity(new android.content.Intent(this, HomeActivity.class));
+
+            if (id == R.id.nav_global_search) {
+                startActivity(new Intent(this, GlobalSearchActivity.class));
+            } else if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
             } else if (id == R.id.nav_profile) {
-                // startActivity(new Intent(this, ProfileActivity.class));
+                startActivity(new Intent(this, UserProfileActivity.class));
             } else if (id == R.id.nav_chat) {
-                startActivity(new android.content.Intent(this, ChatActivity.class));
+                startActivity(new Intent(this, ChatActivity.class));
             } else if (id == R.id.nav_project) {
-                startActivity(new android.content.Intent(this, ListYourProjectsActivity.class));
+                startActivity(new Intent(this, ListYourProjectsActivity.class));
+            } else if (id == R.id.nav_my_tasks) {
+                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
             } else if (id == R.id.nav_settings) {
-                startActivity(new android.content.Intent(this, SettingsActivity.class));
+                startActivity(new Intent(this, SettingsActivity.class));
             } else if (id == R.id.nav_calendar) {
-                // đang ở Calendar -> chỉ đóng drawer
+                startActivity(new Intent(this, CalendarEventsActivity.class));
             } else if (id == R.id.nav_logout) {
-                startActivity(new android.content.Intent(this, MainActivity.class));
+                FirebaseAuth.getInstance().signOut();
+                startActivity(new Intent(this, MainActivity.class));
                 finish();
             }
+
             drawerLayout.closeDrawers();
             return true;
         });
