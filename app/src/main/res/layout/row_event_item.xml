@@ -1,22 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="10dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
 
     <TextView
-        android:id="@+id/tvTaskId"
-        android:textStyle="bold"
-        android:textSize="16sp"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvAssignedTo"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Task ID: 1234"/>
+        android:text="Assigned to: "
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="?android:textColorPrimary"
+        android:paddingBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status: "
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="?android:textColorPrimary"
+        android:paddingBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvDueDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Due: "
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="?android:textColorPrimary" />
+    <TextView
+        android:id="@+id/tvTaskId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Task ID:"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:paddingBottom="4dp"/>
 
     <TextView
         android:id="@+id/tvEventDate"
-        android:textColor="#666666"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Date: 2025-11-07"/>
+        android:text="Date:"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:paddingBottom="4dp"/>
+
 </LinearLayout>

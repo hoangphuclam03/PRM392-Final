@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.example.prm392.models.NotificationEntity;
 
@@ -11,8 +12,17 @@ import java.util.List;
 
 @Dao
 public interface NotificationDAO {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertOrUpdate(NotificationEntity notif);
+
+    // ✅ Insert list (append thêm)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(List<NotificationEntity> notifs);
+
+    // ✅ Update full entity nếu cần sửa nhiều fields (append)
+    @Update
+    void update(NotificationEntity notif);
 
     @Query("SELECT * FROM notifications WHERE userId = :userId ORDER BY timestamp DESC")
     List<NotificationEntity> getByUser(String userId);
@@ -22,6 +32,15 @@ public interface NotificationDAO {
 
     @Query("UPDATE notifications SET isRead = 1 WHERE notifId = :notifId")
     void markAsRead(String notifId);
+
+    @Query("UPDATE notifications SET isRead = 1 WHERE userId = :userId")
+    void markAllAsRead(String userId); // ✅ append
+
+    @Query("DELETE FROM notifications WHERE notifId = :notifId")
+    void deleteById(String notifId); // ✅ append
+
+    @Query("DELETE FROM notifications WHERE userId = :userId")
+    void deleteByUser(String userId); // ✅ append
 
     @Query("DELETE FROM notifications")
     void clearAll();

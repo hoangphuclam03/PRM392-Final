@@ -1,139 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".activities.ChatActivity">
 
-    <!-- Toolbar -->
-
-    <!-- List messages -->
-
-    <!-- Bottom input -->
-
+    <!-- MAIN CONTENT WRAPPER -->
     <RelativeLayout
-        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@color/my_primary"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+        android:layout_height="match_parent">
 
-        <!-- Back -->
-
-        <!-- Avatar -->
-
-        <ImageButton
-            android:id="@+id/back_btn"
-            android:layout_width="70dp"
-            android:layout_height="match_parent"
-            android:layout_alignParentStart="true"
-            android:layout_marginStart="1dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/cd_back"
-            android:src="@drawable/icon_back"
-            android:tooltipText="@string/cd_back"
-            app:tint="@color/white" />
-
-        <include
-            android:id="@+id/profile_pic_layout"
-            layout="@layout/profile_pic_view"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="10dp"
-            android:layout_toEndOf="@id/back_btn" />
-
-        <!-- Title -->
-
-        <!-- Team menu ▾ (ở mép phải) -->
-        <ImageButton
-            android:id="@+id/btn_team_menu"
-            android:layout_width="89dp"
-            android:layout_height="54dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="0dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/team_menu"
-            android:src="@drawable/outline_arrow_drop_down_24"
-            app:tint="@android:color/white" />
-
-
-        <TextView
-            android:id="@+id/other_username"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="130dp"
-            android:layout_marginEnd="-341dp"
-            android:text="Chưa chọn người"
-            android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-    </RelativeLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/chat_recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/bottom_layout"
-        android:layout_below="@id/toolbar"
-        android:layout_marginTop="-1dp"
-        android:layout_marginBottom="1dp" />
-
-    <RelativeLayout
-        android:id="@+id/bottom_layout"
-        android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:layout_alignParentBottom="true"
-        android:padding="8dp">
-
-        <ImageButton
-            android:id="@+id/message_send_btn"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/cd_send_message"
-            android:tooltipText="@string/cd_send_message"
-            android:padding="8dp"
-            app:tint="@color/my_primary"
-            android:src="@drawable/icon_send" />
-
-        <EditText
-            android:id="@+id/chat_message_input"
+        <!-- Toolbar dùng cho Drawer toggle -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_toStartOf="@id/message_send_btn"
-            android:layout_alignParentStart="true"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/edit_text_rounded_corner"
-            android:elevation="4dp"
-            android:hint="@string/hint_write_message"
-            android:padding="10dp" />
-        <TextView
-            android:id="@+id/tv_sender_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:textColor="#555555"
-            android:textSize="12sp"
-            android:visibility="gone"
-            android:paddingBottom="2dp"/>
+            android:layout_height="?attr/actionBarSize"
+            android:title="Tin nhắn"
+            app:menu="@menu/menu_team"
+            app:navigationIcon="@drawable/ic_user" />
 
-        <!-- Bong bóng tin nhắn cũ của bạn -->
-        <!-- ví dụ: -->
-        <TextView
-            android:id="@+id/tv_message_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_message_out"
-            android:padding="10dp"
-            android:text="sample"/>
+        <!-- Header chat (ĐÃ ĐỔI ID từ 'toolbar' -> 'chat_header') -->
+        <RelativeLayout
+            android:id="@+id/chat_header"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_below="@id/toolbar"
+            android:background="@color/my_primary"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp">
+
+            <!-- Back -->
+            <ImageButton
+                android:layout_width="70dp"
+                android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:layout_marginStart="1dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_back"
+                android:tooltipText="@string/cd_back"
+                app:tint="@color/white" />
+
+            <!-- Avatar -->
+            <include
+                android:id="@+id/profile_pic_layout"
+                layout="@layout/profile_pic_view"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="10dp"/>
+
+            <!-- Team menu ▾ (mép phải) -->
+            <ImageButton
+                android:id="@+id/btn_team_menu"
+                android:layout_width="89dp"
+                android:layout_height="54dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/team_menu"
+                android:src="@drawable/outline_arrow_drop_down_24"
+                app:tint="@android:color/white" />
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/other_username"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/btn_team_menu"
+                android:layout_toEndOf="@id/profile_pic_layout"
+                android:layout_marginStart="12dp"
+                android:text="Chưa chọn người"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <!-- Danh sách tin nhắn -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/chat_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/bottom_layout"
+            android:layout_below="@id/chat_header"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="1dp" />
+
+        <!-- Khung nhập -->
+        <RelativeLayout
+            android:id="@+id/bottom_layout"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_alignParentBottom="true"
+            android:padding="8dp">
+
+            <ImageButton
+                android:id="@+id/message_send_btn"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_send_message"
+                android:tooltipText="@string/cd_send_message"
+                android:padding="8dp"
+                android:src="@drawable/icon_send"
+                app:tint="@color/my_primary" />
+
+            <EditText
+                android:id="@+id/chat_message_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/message_send_btn"
+                android:layout_alignParentStart="true"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/edit_text_rounded_corner"
+                android:elevation="4dp"
+                android:hint="@string/hint_write_message"
+                android:padding="10dp" />
+
+            <!-- Giữ lại nếu bạn dùng cho hiển thị -->
+            <TextView
+                android:id="@+id/tv_sender_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="2dp"
+                android:textColor="#555555"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_message_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_message_out"
+                android:padding="10dp"
+                android:text="sample"
+                android:visibility="gone" />
+        </RelativeLayout>
     </RelativeLayout>
 
-</RelativeLayout>
+    <!-- NAVIGATION DRAWER -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@menu/nav_menu" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -36,6 +36,11 @@
             android:contentDescription="@string/desc_add_project"/>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerMembers"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="12dp" />
     <!-- Navigation Drawer -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"

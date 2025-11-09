@@ -223,4 +223,21 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             layoutAssignees = itemView.findViewById(R.id.layoutAssignees);
         }
     }
+    static class VH extends RecyclerView.ViewHolder {
+        TextView tvAssignedTo, tvStatus, tvDueDate;
+
+        VH(@NonNull View itemView) {
+            super(itemView);
+            tvAssignedTo = itemView.findViewById(R.id.tvAssignedTo);
+            tvStatus     = itemView.findViewById(R.id.tvStatus);
+            tvDueDate    = itemView.findViewById(R.id.tvDueDate);
+        }
+
+        void bind(TaskEntity t) {
+            tvAssignedTo.setText("Assigned to: " + (t.assignedTo == null ? "-" : t.assignedTo));
+            tvStatus.setText("Status: " + (t.status == null ? "-" : t.status));
+            tvDueDate.setText("Due: " + (t.dueDate == null ? "-" : t.dueDate));
+        }
+    }
+
 }

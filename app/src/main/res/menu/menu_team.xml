@@ -1,33 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- Mở danh sách team -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_open_team"
-        android:title="Danh sách team" />
-
-    <!-- Tạo / sửa / xoá team -->
-    <item
-        android:id="@+id/action_add_team"
-        android:title="Thêm team" />
-    <item
-        android:id="@+id/action_rename_team"
-        android:title="Sửa team" />
-    <item
-        android:id="@+id/action_delete_team"
-        android:title="Xoá team" />
-
-    <!-- Quản lý thành viên -->
-    <item
-        android:id="@+id/action_add_member"
-        android:title="Thêm thành viên" />
-    <item
-        android:id="@+id/action_delete_member"
-        android:title="Xoá thành viên" />
-
-    <!-- Mở team theo tên -->
-    <item
-        android:id="@+id/action_open_team_by_name"
-        android:title="Mở team theo tên" />
-
+        android:id="@+id/action_browse_projects"
+        android:title="Chọn dự án"
+        app:showAsAction="never" />
 </menu>

@@ -24,7 +24,7 @@ public class FirebaseUtil {
 
     // ------------------------- 🔐 AUTH + FIRESTORE CORE -------------------------
     private static final FirebaseAuth auth = FirebaseAuth.getInstance();
-    private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    public static final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     public static FirebaseAuth getAuth() {
         return auth;
@@ -172,5 +172,17 @@ public class FirebaseUtil {
             put("body", message);
         }});
         Log.d("FirebaseUtil", "Notification to " + token + ": " + message);
+    }
+    // === Alias cho đặt tên thống nhất ===
+    public static CollectionReference getTeamCollection() {
+        return teamsCollection(); // dùng chung "teams"
+    }
+
+    public static DocumentReference getTeamRef(String teamId) {
+        return teamRef(teamId);
+    }
+
+    public static CollectionReference getTeamMessagesRef(String teamId) {
+        return teamMessagesRef(teamId);
     }
 }
