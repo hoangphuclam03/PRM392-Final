@@ -60,9 +60,6 @@
         </service>
 
         <activity
-            android:name=".activities.RemoveMemberActivity"
-            android:exported="false" />
-        <activity
             android:name=".activities.ListPublicProjectsActivity"
             android:exported="false" />
     </application>
