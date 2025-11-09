@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="@color/md_theme_light_background">
 
     <!-- Header -->
     <androidx.cardview.widget.CardView
@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="20dp"
-            android:background="#1976D2">
+            android:background="@color/md_theme_light_primary">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -33,7 +33,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_menu_revert"
                     android:contentDescription="Back"
-                    app:tint="#FFFFFF" />
+                    app:tint="@color/md_theme_light_onPrimary" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -49,7 +49,7 @@
                         android:text="Project Name"
                         android:textSize="24sp"
                         android:textStyle="bold"
-                        android:textColor="#FFFFFF"/>
+                        android:textColor="@color/md_theme_light_onPrimary"/>
 
                     <TextView
                         android:id="@+id/tvTaskCount"
@@ -57,7 +57,7 @@
                         android:layout_height="wrap_content"
                         android:text="0 tasks"
                         android:textSize="14sp"
-                        android:textColor="#E3F2FD"
+                        android:textColor="@color/md_theme_light_secondary"
                         android:layout_marginTop="4dp"/>
                 </LinearLayout>
 
@@ -68,7 +68,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_popup_sync"
                     android:contentDescription="Refresh"
-                    app:tint="#FFFFFF" />
+                    app:tint="@color/md_theme_light_onPrimary" />
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -107,7 +107,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:padding="12dp"
-                        android:background="#FF9800"
+                        android:background="@color/md_theme_light_secondary"
                         android:gravity="center_vertical">
 
                         <TextView
@@ -117,7 +117,7 @@
                             android:text="📋 TO DO"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#FFFFFF"/>
+                            android:textColor="@color/md_theme_light_onSecondary"/>
 
                         <TextView
                             android:id="@+id/tvTodoCount"
@@ -125,9 +125,8 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textSize="14sp"
-                            android:textColor="#FFFFFF"
-                            android:background="#FFFFFF"
-                            android:textColorHint="#FF9800"
+                            android:textColor="@color/md_theme_light_secondary"
+                            android:background="@color/md_theme_light_surface"
                             android:paddingStart="8dp"
                             android:paddingEnd="8dp"
                             android:paddingTop="2dp"
@@ -165,7 +164,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:padding="12dp"
-                        android:background="#2196F3"
+                        android:background="@color/md_theme_light_primary"
                         android:gravity="center_vertical">
 
                         <TextView
@@ -175,7 +174,7 @@
                             android:text="⚡ IN PROGRESS"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#FFFFFF"/>
+                            android:textColor="@color/md_theme_light_onPrimary"/>
 
                         <TextView
                             android:id="@+id/tvInProgressCount"
@@ -183,8 +182,8 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textSize="14sp"
-                            android:textColor="#2196F3"
-                            android:background="#FFFFFF"
+                            android:textColor="@color/md_theme_light_primary"
+                            android:background="@color/md_theme_light_surface"
                             android:paddingStart="8dp"
                             android:paddingEnd="8dp"
                             android:paddingTop="2dp"
@@ -199,7 +198,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:clipToPadding="false"
-                    android:paddingBottom="80dp"/>
+                    android:paddingBottom="80dp" />
             </LinearLayout>
 
             <!-- Column 3: IN REVIEW -->
@@ -221,7 +220,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:padding="12dp"
-                        android:background="#9C27B0"
+                        android:background="@color/md_theme_light_secondary"
                         android:gravity="center_vertical">
 
                         <TextView
@@ -231,7 +230,7 @@
                             android:text="👀 IN REVIEW"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#FFFFFF"/>
+                            android:textColor="@color/md_theme_light_onSecondary"/>
 
                         <TextView
                             android:id="@+id/tvInReviewCount"
@@ -239,8 +238,8 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textSize="14sp"
-                            android:textColor="#9C27B0"
-                            android:background="#FFFFFF"
+                            android:textColor="@color/md_theme_light_secondary"
+                            android:background="@color/md_theme_light_surface"
                             android:paddingStart="8dp"
                             android:paddingEnd="8dp"
                             android:paddingTop="2dp"
@@ -276,7 +275,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:padding="12dp"
-                        android:background="#4CAF50"
+                        android:background="@color/md_theme_light_primary"
                         android:gravity="center_vertical">
 
                         <TextView
@@ -286,7 +285,7 @@
                             android:text="✅ DONE"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#FFFFFF"/>
+                            android:textColor="@color/md_theme_light_onPrimary"/>
 
                         <TextView
                             android:id="@+id/tvDoneCount"
@@ -294,8 +293,8 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textSize="14sp"
-                            android:textColor="#4CAF50"
-                            android:background="#FFFFFF"
+                            android:textColor="@color/md_theme_light_primary"
+                            android:background="@color/md_theme_light_surface"
                             android:paddingStart="8dp"
                             android:paddingEnd="8dp"
                             android:paddingTop="2dp"
@@ -323,7 +322,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="#1976D2"
-        app:tint="#FFFFFF"
+        app:backgroundTint="@color/md_theme_light_primary"
+        app:tint="@color/md_theme_light_onPrimary"
         android:contentDescription="Add Task"/>
 </LinearLayout>
