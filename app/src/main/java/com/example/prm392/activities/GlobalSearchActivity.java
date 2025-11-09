@@ -1,5 +1,6 @@
 package com.example.prm392.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -7,8 +8,11 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.ProgressBar;
 
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,6 +23,7 @@ import com.example.prm392.models.ProjectEntity;
 import com.example.prm392.models.SearchResultItem;
 import com.example.prm392.models.TaskEntity;
 import com.example.prm392.models.UserEntity;
+import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,10 +38,33 @@ public class GlobalSearchActivity extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable workRunnable;
 
+    // Navigation components
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private ActionBarDrawerToggle toggle;
+    private Toolbar toolbar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_global_search);
+
+        // ---------------- UI setup ----------------
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        drawerLayout = findViewById(R.id.drawerLayout);
+        navigationView = findViewById(R.id.navigationView);
+
+        toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close
+        );
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
+        navigationView.setCheckedItem(R.id.nav_global_search);
+        setupNavigationMenu();
 
         searchView = findViewById(R.id.globalSearchView);
         recyclerView = findViewById(R.id.recyclerSearchResults);
@@ -47,6 +75,36 @@ public class GlobalSearchActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         setupSearch();
+    }
+
+    private void setupNavigationMenu() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_global_search) {
+                drawerLayout.closeDrawers();
+                return true;
+            }
+            if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+            } else if (id == R.id.nav_profile) {
+                startActivity(new Intent(this, UserProfileActivity.class));
+            } else if (id == R.id.nav_chat) {
+                startActivity(new Intent(this, ChatActivity.class));
+            } else if (id == R.id.nav_project) {
+                startActivity(new Intent(this, ListYourProjectsActivity.class));
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(this, SettingsActivity.class));
+            } else if (id == R.id.nav_calendar) {
+                startActivity(new Intent(this, CalendarEventsActivity.class));
+            } else if (id == R.id.nav_logout) {
+                startActivity(new Intent(this, MainActivity.class));
+                finish();
+            }
+
+            drawerLayout.closeDrawers();
+            return true;
+        });
     }
 
     private void setupSearch() {
@@ -61,7 +119,7 @@ public class GlobalSearchActivity extends AppCompatActivity {
             public boolean onQueryTextChange(String newText) {
                 handler.removeCallbacks(workRunnable);
                 workRunnable = () -> performSearch(newText.trim());
-                handler.postDelayed(workRunnable, 300); // debounce 300ms
+                handler.postDelayed(workRunnable, 300);
                 return true;
             }
         });
@@ -81,10 +139,9 @@ public class GlobalSearchActivity extends AppCompatActivity {
             AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
             List<ProjectEntity> projects = db.projectDAO().searchProjects(query);
-            List<TaskEntity> tasks = db.taskDAO().getAllTasks(); // we'll refine this below
-            List<UserEntity> matchedUsers = db.userDAO().searchUsers(query);
+            List<TaskEntity> tasks = db.taskDAO().getAllTasks(); // refine later if needed
+            List<UserEntity> matchedUsers = db.userDAO().searchUsers(query); // ✅ DAO-based search now
 
-            // filter tasks and users manually for now
             List<TaskEntity> matchedTasks = new ArrayList<>();
             for (TaskEntity t : tasks) {
                 if (t.title != null && t.title.toLowerCase().contains(query.toLowerCase()))
@@ -92,7 +149,6 @@ public class GlobalSearchActivity extends AppCompatActivity {
                 else if (t.description != null && t.description.toLowerCase().contains(query.toLowerCase()))
                     matchedTasks.add(t);
             }
-
 
             List<SearchResultItem> finalList = new ArrayList<>();
 
