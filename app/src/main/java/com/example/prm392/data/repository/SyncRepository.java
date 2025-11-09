@@ -4,9 +4,12 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.data.local.UserDAO;
 import com.example.prm392.models.ProjectEntity;
 import com.example.prm392.models.ProjectMemberEntity;
 import com.example.prm392.models.TaskEntity;
+import com.example.prm392.models.UserEntity;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
@@ -20,7 +23,7 @@ public class SyncRepository {
 
     private final AppDatabase localDb;
     private final FirebaseFirestore remoteDb;
-    private final ExecutorService executor; // ensure all DB ops off the main thread
+    private final ExecutorService executor;
 
     public SyncRepository(Context context) {
         this.localDb = AppDatabase.getInstance(context);
@@ -40,6 +43,7 @@ public class SyncRepository {
                 syncMembersFromFirestore();
                 syncTasksToFirestore();
                 syncTasksFromFirestore();
+                syncUsersFromFirestore(); // 🔥 NEW: pulls all users into local Room
             } catch (Exception e) {
                 Log.e("SyncRepo", "❌ syncAll failed: " + e.getMessage(), e);
             }
@@ -203,23 +207,53 @@ public class SyncRepository {
     }
 
     // =============================================================
-// 🔄 HARD REFRESH — luôn kéo dữ liệu mới nhất từ Firestore về Room
-// =============================================================
+    // 🔹 USERS (NEW)
+    // =============================================================
+    public void syncUsersFromFirestore() {
+        remoteDb.collection("Users")
+                .get()
+                .addOnSuccessListener(snapshot -> executor.execute(() -> {
+                    try {
+                        UserDAO userDAO = localDb.userDAO();
+
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            UserEntity user = new UserEntity();
+                            user.userId = doc.getId();
+                            user.fullName = doc.getString("fullName");
+                            user.email = doc.getString("email");
+                            user.avatarUrl = doc.getString("avatarUrl");
+                            user.password = ""; // never sync password from Firebase
+                            Long lastLogin = doc.getLong("lastLogin");
+                            user.lastLogin = lastLogin != null ? lastLogin : 0L;
+
+                            userDAO.insertOrUpdate(user);
+                        }
+
+                        Log.d("SyncRepo", "✅ Synced " + snapshot.size() + " users from Firestore → Room");
+                    } catch (Exception e) {
+                        Log.e("SyncRepo", "❌ Error syncing users from Firestore", e);
+                    }
+                }))
+                .addOnFailureListener(e ->
+                        Log.e("SyncRepo", "❌ Fetch Firestore users failed", e)
+                );
+    }
+
+    // =============================================================
+    // 🔄 HARD REFRESH — luôn kéo dữ liệu mới nhất từ Firestore về Room
+    // =============================================================
     public void refreshProjectsFromFirestore() {
         remoteDb.collection("projects")
                 .get()
                 .addOnSuccessListener(snapshot -> executor.execute(() -> {
                     try {
-                        // 1️⃣ XÓA SẠCH LOCAL ROOM
                         localDb.projectDAO().clearAll();
 
-                        // 2️⃣ NẾU Firestore rỗng → Room cũng rỗng
                         if (snapshot == null || snapshot.isEmpty()) {
                             Log.d("SyncRepo", "⚠️ Firestore empty, cleared local Room");
                             return;
                         }
 
-                        // 3️⃣ NẾU CÓ DỮ LIỆU → TẢI VỀ
                         for (QueryDocumentSnapshot doc : snapshot) {
                             ProjectEntity project = doc.toObject(ProjectEntity.class);
                             if (project.projectId == null)
@@ -236,17 +270,12 @@ public class SyncRepository {
                 );
     }
 
-
-    public FirebaseFirestore getRemoteDb() {
-        return remoteDb;
-    }
     // =============================================================
-// 🗑 DELETE PROJECT + ALL MEMBERS
-// =============================================================
+    // 🗑 DELETE PROJECT + ALL MEMBERS
+    // =============================================================
     public void deleteProjectAndMembers(String projectId) {
         Log.d("SyncRepo", "🧩 deleteProjectAndMembers CALLED with projectId = " + projectId);
 
-        // 1️⃣ Xoá tất cả project_members có cùng projectId
         remoteDb.collection("project_members")
                 .whereEqualTo("projectId", projectId)
                 .get()
@@ -257,14 +286,12 @@ public class SyncRepository {
                     }
                     Log.d("SyncRepo", "✅ Deleted all members for project " + projectId);
 
-                    // 2️⃣ Sau khi xoá xong members → xoá project chính
                     remoteDb.collection("projects")
                             .document(projectId)
                             .delete()
                             .addOnSuccessListener(a -> {
                                 Log.d("SyncRepo", "✅ Deleted project doc " + projectId);
 
-                                // 3️⃣ Xoá local Room
                                 executor.execute(() -> {
                                     try {
                                         localDb.projectDAO().deleteById(projectId);
@@ -285,7 +312,7 @@ public class SyncRepository {
                 );
     }
 
-
-
-
+    public FirebaseFirestore getRemoteDb() {
+        return remoteDb;
+    }
 }
