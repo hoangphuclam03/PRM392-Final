@@ -2,10 +2,8 @@ package com.example.prm392.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,10 +17,13 @@ import com.example.prm392.adapter.ProjectAdapter;
 import com.example.prm392.data.local.AppDatabase;
 import com.example.prm392.data.repository.SyncRepository;
 import com.example.prm392.models.ProjectEntity;
+import com.example.prm392.models.ProjectMemberEntity;
+import com.example.prm392.models.UserEntity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.List;
+import java.util.UUID;
 
 public class ListYourProjectsActivity extends AppCompatActivity {
 
@@ -34,20 +35,18 @@ public class ListYourProjectsActivity extends AppCompatActivity {
     private AppDatabase db;
     private SyncRepository syncRepo;
 
-    private final String currentUserId = "USER001"; // Giả lập user đăng nhập
+    private String currentUserId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_projects);
 
-        // ---------------- Toolbar & Drawer Setup ----------------
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Tạo toggle để quản lý nút menu
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawerLayout, toolbar,
                 R.string.navigation_drawer_open,
@@ -58,7 +57,6 @@ public class ListYourProjectsActivity extends AppCompatActivity {
 
         setupNavigation();
 
-        // ---------------- RecyclerView Setup ----------------
         recyclerView = findViewById(R.id.recyclerViewProjects);
         fabAdd = findViewById(R.id.fabAddProject);
         db = AppDatabase.getInstance(this);
@@ -67,42 +65,47 @@ public class ListYourProjectsActivity extends AppCompatActivity {
 
         fabAdd.setOnClickListener(v -> startActivity(new Intent(this, CreateProjectActivity.class)));
 
-        refreshAndLoadProjects();
+        loadCurrentUserAndProjects();
     }
 
-    // ---------------- Navigation Drawer Action ----------------
     private void setupNavigation() {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                startActivity(new Intent(this, HomeActivity.class));
-            } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Bạn đang ở: Hồ sơ cá nhân", Toast.LENGTH_SHORT).show();
-            } else if (id == R.id.nav_chat) {
-                startActivity(new Intent(this, ChatActivity.class));
-            } else if (id == R.id.nav_project) {
-                recreate(); // Trang hiện tại
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
-            } else if (id == R.id.nav_calendar) {
-                startActivity(new Intent(this, CalendarEventsActivity.class));
-            } else if (id == R.id.nav_logout) {
-                Toast.makeText(this, "Đăng xuất...", Toast.LENGTH_SHORT).show();
-                // logoutUser(); nếu có
-            }
+            if (id == R.id.nav_home) startActivity(new Intent(this, HomeActivity.class));
+            else if (id == R.id.nav_chat) startActivity(new Intent(this, ChatActivity.class));
+            else if (id == R.id.nav_project) recreate();
+            else if (id == R.id.nav_settings) startActivity(new Intent(this, SettingsActivity.class));
+            else if (id == R.id.nav_calendar) startActivity(new Intent(this, CalendarEventsActivity.class));
             drawerLayout.closeDrawers();
             return true;
         });
     }
 
-    // ---------------- Firestore Sync ----------------
+    private void loadCurrentUserAndProjects() {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            UserEntity currentUser = db.userDAO().getLastLoggedInUser();
+            if (currentUser == null || currentUser.userId == null) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "Không tìm thấy người dùng hiện tại. Vui lòng đăng nhập lại.",
+                        Toast.LENGTH_LONG).show());
+                return;
+            }
+
+            currentUserId = currentUser.userId;
+            refreshAndLoadProjects();
+        });
+    }
+
     private void refreshAndLoadProjects() {
+        if (currentUserId == null) return;
+
         AppDatabase.databaseWriteExecutor.execute(() -> {
             syncRepo.refreshProjectsFromFirestore();
             try {
                 Thread.sleep(1500);
-            } catch (InterruptedException ignored) {}
-            List<ProjectEntity> projects = db.projectDAO().getProjectsByUser(currentUserId);
+            } catch (InterruptedException ignored) {
+            }
+            List<ProjectEntity> projects = db.projectDAO().getAll(); // ✅ hiện tất cả project
             runOnUiThread(() -> displayProjects(projects));
         });
     }
@@ -115,14 +118,22 @@ public class ListYourProjectsActivity extends AppCompatActivity {
             adapter = new ProjectAdapter(
                     projects,
                     currentUserId,
-                    project -> Toast.makeText(this, "Đã chọn: " + project.projectName, Toast.LENGTH_SHORT).show(),
-                    project -> {
+                    project -> { // click vào item
+                        Intent intent = new Intent(this, ProjectMembersActivity.class);
+                        intent.putExtra("projectId", project.projectId);
+                        intent.putExtra("projectName", project.projectName);
+                        intent.putExtra("isPublic", project.isPublic);
+                        startActivity(intent);
+                    },
+                    project -> { // edit
                         Intent intent = new Intent(this, EditProjectActivity.class);
                         intent.putExtra("projectId", project.projectId);
                         startActivity(intent);
                     },
-                    this::deleteProject
+                    this::deleteProject,
+                    this::joinPublicProject // ✅ truyền đúng số lượng (6 tham số)
             );
+
             recyclerView.setAdapter(adapter);
         }
     }
@@ -132,14 +143,13 @@ public class ListYourProjectsActivity extends AppCompatActivity {
                 .setTitle("Xác nhận xoá")
                 .setMessage("Bạn có chắc muốn xoá project \"" + project.projectName + "\" không?")
                 .setPositiveButton("Xoá", (dialog, which) -> {
-                    Toast.makeText(this, "Đang xoá project...", Toast.LENGTH_SHORT).show();
                     AppDatabase.databaseWriteExecutor.execute(() -> {
                         try {
                             syncRepo.deleteProjectAndMembers(project.projectId);
                             db.projectDAO().delete(project);
                             db.projectMemberDAO().deleteByProject(project.projectId);
                             runOnUiThread(() -> {
-                                Toast.makeText(this, "Đã xoá project " + project.projectName, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, "Đã xoá project", Toast.LENGTH_SHORT).show();
                                 refreshAndLoadProjects();
                             });
                         } catch (Exception e) {
@@ -152,9 +162,41 @@ public class ListYourProjectsActivity extends AppCompatActivity {
                 .show());
     }
 
+    private void joinPublicProject(ProjectEntity project) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            ProjectMemberEntity existing = db.projectMemberDAO()
+                    .getMemberByProjectAndUser(project.projectId, currentUserId);
+
+            if (existing != null) {
+                runOnUiThread(() -> Toast.makeText(this, "Bạn đã là thành viên của project này", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            UserEntity user = db.userDAO().getLastLoggedInUser();
+            if (user == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Không xác định user", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            ProjectMemberEntity newMember = new ProjectMemberEntity();
+            newMember.memberId = UUID.randomUUID().toString();
+            newMember.projectId = project.projectId;
+            newMember.userId = currentUserId;
+            newMember.fullName = user.fullName;
+            newMember.role = "Member";
+            newMember.pendingSync = true;
+
+            db.projectMemberDAO().insertOrUpdate(newMember);
+            new SyncRepository(this).syncMembersToFirestore();
+
+            runOnUiThread(() -> Toast.makeText(this,
+                    "Đã tham gia project " + project.projectName, Toast.LENGTH_SHORT).show());
+        });
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        refreshAndLoadProjects();
+        if (currentUserId != null) refreshAndLoadProjects();
     }
 }

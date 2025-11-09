@@ -57,4 +57,10 @@ public interface ProjectMemberDAO {
     // ✅ UP SERT chính thức (teamListActivity cần)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(ProjectMemberEntity member);
+
+    @Query("DELETE FROM project_members WHERE memberId = :memberId")
+    void deleteMemberById(String memberId);
+    @Query("SELECT * FROM project_members WHERE projectId = :projectId AND userId = :userId LIMIT 1")
+    ProjectMemberEntity getMemberByProjectAndUser(String projectId, String userId);
+
 }

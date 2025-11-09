@@ -4,46 +4,56 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
-    android:background="@drawable/bg_card">
+    android:background="@drawable/bg_card"
+    android:layout_marginBottom="8dp">
 
+    <!-- 🔹 Tên Project -->
     <TextView
         android:id="@+id/tvProjectName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textStyle="bold"
-        android:textSize="16sp" />
+        android:textSize="16sp"
+        android:textColor="?attr/colorSurface" />
 
+    <!-- 🔹 Mô tả Project -->
     <TextView
         android:id="@+id/tvProjectDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#888888"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="14sp"
         android:layout_marginTop="4dp" />
 
-    <!-- ✅ Trạng thái Public/Private -->
+    <!-- 🔹 Trạng thái Public / Private -->
     <TextView
         android:id="@+id/tvProjectVisibility"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:textSize="13sp"
-        android:textColor="#666666" />
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
+    <!-- 🔹 Nhóm nút thao tác -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:gravity="end"
         android:layout_marginTop="8dp">
 
+        <!-- ✏️ Nút Edit -->
         <Button
             android:id="@+id/btnEdit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Edit"
             android:textSize="13sp"
-            android:paddingHorizontal="12dp"/>
+            android:paddingHorizontal="12dp"
+            android:backgroundTint="@color/teal_700"
+            android:textColor="@android:color/white" />
 
+        <!-- 🗑️ Nút Delete -->
         <Button
             android:id="@+id/btnDelete"
             android:layout_width="wrap_content"
@@ -51,6 +61,23 @@
             android:text="Delete"
             android:textSize="13sp"
             android:layout_marginStart="8dp"
-            android:paddingHorizontal="12dp"/>
+            android:paddingHorizontal="12dp"
+            android:backgroundTint="@color/red_700"
+            android:textColor="@android:color/white" />
+
+        <!-- ➕ Nút Join (ẩn mặc định) -->
+        <Button
+            android:id="@+id/btnJoin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Join"
+            android:textSize="13sp"
+            android:layout_marginStart="8dp"
+            android:paddingHorizontal="12dp"
+            android:backgroundTint="@color/purple_500"
+            android:textColor="@android:color/white"
+            android:visibility="gone" />
     </LinearLayout>
+
 </LinearLayout>
+

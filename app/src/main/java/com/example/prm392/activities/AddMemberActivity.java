@@ -1,150 +1,126 @@
 package com.example.prm392.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.View;
-import android.view.ViewGroup;
+import android.text.TextUtils;
+import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.R;
 import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.models.ProjectMemberEntity;
 import com.example.prm392.models.UserEntity;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Executors;
 
 public class AddMemberActivity extends AppCompatActivity {
 
-    private RecyclerView rv;
-    private EditText searchInput;
-    private UserAdapter adapter;
+    private EditText edtEmail;
+    private Button btnAdd;
+    private String projectId;
+    private String projectName;
+    private String currentUserRole;
 
-    // List of all users from Room
-    private List<UserEntity> allUsers = new ArrayList<>();
+    private FirebaseFirestore db;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_search_user);
-        setTitle("Thêm thành viên");
+        setContentView(R.layout.activity_add_member);
 
-        ImageButton back = findViewById(R.id.back_btn);
-        if (back != null) back.setOnClickListener(v -> finish());
+        // 🔹 Ánh xạ View
+        edtEmail = findViewById(R.id.edtEmail);
+        btnAdd = findViewById(R.id.btnAdd);
+        db = FirebaseFirestore.getInstance();
 
-        rv = findViewById(R.id.search_user_recycler);
-        rv.setLayoutManager(new LinearLayoutManager(this));
+        // 🔹 Nhận dữ liệu từ Intent
+        projectId = getIntent().getStringExtra("projectId");
+        projectName = getIntent().getStringExtra("projectName");
+        currentUserRole = getIntent().getStringExtra("role");
 
-        searchInput = findViewById(R.id.search_username_input);
+        // 🔹 Toolbar có nút Back
+        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        toolbar.setNavigationOnClickListener(v -> {
+            Intent intent = new Intent(this, ProjectMembersActivity.class);
+            intent.putExtra("projectId", projectId);
+            intent.putExtra("projectName", projectName);
+            intent.putExtra("role", currentUserRole);
+            startActivity(intent);
+            finish();
+        });
 
-        adapter = new UserAdapter();
-        rv.setAdapter(adapter);
-
-        // TODO: Load users from Room
-        loadUsersFromRoom();
-
-        // Search/filter
-        if (searchInput != null) {
-            searchInput.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                }
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {
-                    String query = s.toString().trim().toLowerCase();
-                    filterUsers(query);
-                }
-            });
-        }
+        // 🔹 Xử lý thêm thành viên
+        btnAdd.setOnClickListener(v -> addMemberByEmail());
     }
 
-    private void loadUsersFromRoom() {
-        // Example: fetch all users from your Room database
-        // Suppose you have a UserDao: List<UserEntity> getAllUsers()
-        new Thread(() -> {
-            allUsers = AppDatabase.getInstance(this).userDAO().getAll(); // blocking call in background
-            runOnUiThread(() -> adapter.submitList(allUsers));
-        }).start();
-    }
-
-    private void filterUsers(String query) {
-        List<UserEntity> filtered = new ArrayList<>();
-        for (UserEntity u : allUsers) {
-            String email = u.email == null ? "" : u.email.toLowerCase();
-            String name = u.fullName == null ? "" : u.fullName.toLowerCase();
-            if (email.contains(query) || name.contains(query)) {
-                filtered.add(u);
-            }
-        }
-        adapter.submitList(filtered);
-    }
-
-    private void addMember(UserEntity user) {
-        if (user == null || user.userId == null) {
-            Toast.makeText(this, "User không hợp lệ", Toast.LENGTH_SHORT).show();
+    private void addMemberByEmail() {
+        String email = edtEmail.getText().toString().trim();
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(this, "Vui lòng nhập email", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // TODO: implement adding to team in Room/Firebase as needed
-        Toast.makeText(this, "Đã thêm: " + user.fullName, Toast.LENGTH_SHORT).show();
-    }
+        // 🔹 Tìm user theo email trong Firestore
+        db.collection("Users")
+                .whereEqualTo("email", email)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Toast.makeText(this, "Không tìm thấy người dùng với email này", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-    // ---------------- Adapter ----------------
-    private class UserAdapter extends RecyclerView.Adapter<UserAdapter.VH> {
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        UserEntity user = doc.toObject(UserEntity.class);
+                        user.userId = doc.getId(); // lấy ID Firestore
 
-        private final List<UserEntity> users = new ArrayList<>();
+                        // 🔹 Tạo ProjectMemberEntity mới
+                        ProjectMemberEntity member = new ProjectMemberEntity();
+                        member.memberId = UUID.randomUUID().toString();
+                        member.projectId = projectId;
+                        member.userId = user.userId;
+                        member.fullName = user.fullName != null ? user.fullName : "(No Name)";
+                        member.role = "Member";
+                        member.pendingSync = false;
+                        member.updatedAt = System.currentTimeMillis();
 
-        void submitList(List<UserEntity> data) {
-            users.clear();
-            if (data != null) users.addAll(data);
-            notifyDataSetChanged();
-        }
+                        // 🔹 Lưu vào Firestore
+                        db.collection("project_members")
+                                .document(member.memberId)
+                                .set(member)
+                                .addOnSuccessListener(aVoid -> {
+                                    // Lưu luôn vào local Room
+                                    Executors.newSingleThreadExecutor().execute(() -> {
+                                        AppDatabase.getInstance(this)
+                                                .projectMemberDAO()
+                                                .upsert(member);
+                                    });
 
-        @NonNull
-        @Override
-        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = getLayoutInflater().inflate(R.layout.search_user_recycler_row, parent, false);
-            return new VH(v);
-        }
+                                    Toast.makeText(this, "Đã thêm thành viên: " + member.fullName, Toast.LENGTH_SHORT).show();
 
-        @Override
-        public void onBindViewHolder(@NonNull VH holder, int position) {
-            UserEntity u = users.get(position);
-            holder.bind(u);
-            holder.itemView.setOnClickListener(v -> addMember(u));
-        }
-
-        @Override
-        public int getItemCount() {
-            return users.size();
-        }
-
-        class VH extends RecyclerView.ViewHolder {
-            TextView tv;
-
-            VH(@NonNull View itemView) {
-                super(itemView);
-                tv = itemView.findViewById(R.id.user_name_text);
-            }
-
-            void bind(UserEntity u) {
-                String line = u.fullName == null || u.fullName.isEmpty() ? "(no name)" : u.fullName;
-                if (u.email != null && !u.email.isEmpty()) line += " • " + u.email;
-                tv.setText(line);
-            }
-        }
+                                    // Quay lại danh sách thành viên
+                                    Intent intent = new Intent(this, ProjectMembersActivity.class);
+                                    intent.putExtra("projectId", projectId);
+                                    intent.putExtra("projectName", projectName);
+                                    intent.putExtra("role", currentUserRole);
+                                    startActivity(intent);
+                                    finish();
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(this, "Lỗi khi thêm: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                );
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Lỗi kết nối Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
     }
 }

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <!-- 🔹 Thanh Toolbar với nút Back -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        app:titleTextColor="?attr/colorOnPrimary"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="Project Members"
+        android:elevation="4dp" />
+
+    <!-- 🔹 Tên Project + Loại Public/Private -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:background="?attr/colorPrimary"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/tvProjectTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Project Name"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="?attr/colorOnPrimary"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:id="@+id/tvProjectVisibility"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="(Private)"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:textColor="?attr/colorOnPrimary" />
+    </LinearLayout>
+
+    <!-- 🔹 Danh sách thành viên -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvMembers"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp" />
+
+    <!-- 🔹 Nút Add Member -->
+    <Button
+        android:id="@+id/btnAddMember"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add Member"
+        android:layout_margin="12dp"
+        android:backgroundTint="?attr/colorPrimary"
+        android:textColor="?attr/colorOnPrimary" />
+</LinearLayout>

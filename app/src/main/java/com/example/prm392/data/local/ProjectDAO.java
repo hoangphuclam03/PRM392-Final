@@ -72,5 +72,7 @@ public interface ProjectDAO {
 
     @Delete
     void delete(ProjectEntity project);
+    @Query("SELECT * FROM projects")
+    List<ProjectEntity> getAll();
 
 }
