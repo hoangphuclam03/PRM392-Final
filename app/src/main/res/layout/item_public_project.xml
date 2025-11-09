@@ -33,11 +33,5 @@
         android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginTop="6dp"/>
 
-    <Button
-        android:id="@+id/btn_request_join"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Join Project"
-        android:textAllCaps="false"
-        android:layout_marginTop="10dp"/>
+
 </LinearLayout>

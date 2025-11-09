@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
                 TaskEntity.class,
                 UserEntity.class
         },
-        version = 8, // ⬅ incremented version to fix schema mismatch
+        version = 9, // ⬅ incremented version to fix schema mismatch
         exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
