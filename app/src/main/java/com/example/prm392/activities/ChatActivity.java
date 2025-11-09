@@ -32,6 +32,7 @@ import com.example.prm392.data.local.UserDAO;
 import com.example.prm392.models.ChatEntity;
 import com.example.prm392.utils.FirebaseUtil;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.HashMap;
 import java.util.List;
@@ -160,23 +161,29 @@ public class ChatActivity extends AppCompatActivity {
     private void setupNavigation() {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) {
+
+            if (id == R.id.nav_global_search) {
+                startActivity(new Intent(this, GlobalSearchActivity.class));
+            } else if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
             } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Hồ sơ cá nhân", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, UserProfileActivity.class));
             } else if (id == R.id.nav_chat) {
-                // đang ở Chat → không làm gì thêm
+                startActivity(new Intent(this, ChatActivity.class));
             } else if (id == R.id.nav_project) {
                 startActivity(new Intent(this, ListYourProjectsActivity.class));
+            } else if (id == R.id.nav_my_tasks) {
+                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
             } else if (id == R.id.nav_calendar) {
                 startActivity(new Intent(this, CalendarEventsActivity.class));
             } else if (id == R.id.nav_logout) {
-                // Tuỳ bạn: có thể signOut tại đây nếu muốn giống HomeActivity
+                FirebaseAuth.getInstance().signOut();
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
             }
+
             drawerLayout.closeDrawers();
             return true;
         });

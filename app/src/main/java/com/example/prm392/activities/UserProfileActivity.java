@@ -99,23 +99,22 @@ public class UserProfileActivity extends AppCompatActivity {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.nav_home) {
+            if (id == R.id.nav_global_search) {
+                startActivity(new Intent(this, GlobalSearchActivity.class));
+            } else if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
-                finish();
             } else if (id == R.id.nav_profile) {
-                drawerLayout.closeDrawers(); // đang ở đây rồi
+                startActivity(new Intent(this, UserProfileActivity.class));
             } else if (id == R.id.nav_chat) {
                 startActivity(new Intent(this, ChatActivity.class));
-                finish();
             } else if (id == R.id.nav_project) {
                 startActivity(new Intent(this, ListYourProjectsActivity.class));
-                finish();
+            } else if (id == R.id.nav_my_tasks) {
+                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
-                finish();
             } else if (id == R.id.nav_calendar) {
                 startActivity(new Intent(this, CalendarEventsActivity.class));
-                finish();
             } else if (id == R.id.nav_logout) {
                 FirebaseAuth.getInstance().signOut();
                 startActivity(new Intent(this, MainActivity.class));

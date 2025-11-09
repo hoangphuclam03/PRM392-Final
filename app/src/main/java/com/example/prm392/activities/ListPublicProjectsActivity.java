@@ -20,6 +20,7 @@ import com.example.prm392.data.local.ProjectDAO;
 import com.example.prm392.models.ProjectEntity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.HashMap;
 import java.util.List;
@@ -82,30 +83,26 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.nav_home) {
+            if (id == R.id.nav_global_search) {
+                startActivity(new Intent(this, GlobalSearchActivity.class));
+            } else if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
-                drawerLayout.closeDrawers();
-                return true;
-
             } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Bạn đang ở: Hồ sơ cá nhân", Toast.LENGTH_SHORT).show();
-
+                startActivity(new Intent(this, UserProfileActivity.class));
             } else if (id == R.id.nav_chat) {
                 startActivity(new Intent(this, ChatActivity.class));
-
             } else if (id == R.id.nav_project) {
-                // Already here
-                drawerLayout.closeDrawers();
-                return true;
-
+                startActivity(new Intent(this, ListYourProjectsActivity.class));
+            } else if (id == R.id.nav_my_tasks) {
+                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
-
             } else if (id == R.id.nav_calendar) {
                 startActivity(new Intent(this, CalendarEventsActivity.class));
-
             } else if (id == R.id.nav_logout) {
-                logoutUser();
+                FirebaseAuth.getInstance().signOut();
+                startActivity(new Intent(this, MainActivity.class));
+                finish();
             }
 
             drawerLayout.closeDrawers();

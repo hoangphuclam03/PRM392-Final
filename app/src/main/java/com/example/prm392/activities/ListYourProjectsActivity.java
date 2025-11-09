@@ -21,6 +21,7 @@ import com.example.prm392.models.ProjectMemberEntity;
 import com.example.prm392.models.UserEntity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
 import java.util.UUID;
@@ -71,11 +72,29 @@ public class ListYourProjectsActivity extends AppCompatActivity {
     private void setupNavigation() {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) startActivity(new Intent(this, HomeActivity.class));
-            else if (id == R.id.nav_chat) startActivity(new Intent(this, ChatActivity.class));
-            else if (id == R.id.nav_project) recreate();
-            else if (id == R.id.nav_settings) startActivity(new Intent(this, SettingsActivity.class));
-            else if (id == R.id.nav_calendar) startActivity(new Intent(this, CalendarEventsActivity.class));
+
+            if (id == R.id.nav_global_search) {
+                startActivity(new Intent(this, GlobalSearchActivity.class));
+            } else if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+            } else if (id == R.id.nav_profile) {
+                startActivity(new Intent(this, UserProfileActivity.class));
+            } else if (id == R.id.nav_chat) {
+                startActivity(new Intent(this, ChatActivity.class));
+            } else if (id == R.id.nav_project) {
+                startActivity(new Intent(this, ListYourProjectsActivity.class));
+            } else if (id == R.id.nav_my_tasks) {
+                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(this, SettingsActivity.class));
+            } else if (id == R.id.nav_calendar) {
+                startActivity(new Intent(this, CalendarEventsActivity.class));
+            } else if (id == R.id.nav_logout) {
+                FirebaseAuth.getInstance().signOut();
+                startActivity(new Intent(this, MainActivity.class));
+                finish();
+            }
+
             drawerLayout.closeDrawers();
             return true;
         });

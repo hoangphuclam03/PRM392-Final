@@ -1,11 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
-    android:background="@drawable/bg_card"
-    android:layout_marginBottom="8dp">
+    android:layout_marginBottom="8dp"
+    android:background="?attr/colorSurface">
 
     <!-- 🔹 Tên Project -->
     <TextView
@@ -14,14 +15,15 @@
         android:layout_height="wrap_content"
         android:textStyle="bold"
         android:textSize="16sp"
-        android:textColor="?attr/colorSurface" />
+        android:textColor="?attr/colorOnSurface" />
 
     <!-- 🔹 Mô tả Project -->
     <TextView
         android:id="@+id/tvProjectDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColor="?attr/colorOnSurface"
+        android:alpha="0.8"
         android:textSize="14sp"
         android:layout_marginTop="4dp" />
 
@@ -32,7 +34,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:textSize="13sp"
-        android:textColor="?attr/colorOnSurfaceVariant" />
+        android:textColor="?attr/colorOnSurface"
+        android:alpha="0.7" />
 
     <!-- 🔹 Nhóm nút thao tác -->
     <LinearLayout
@@ -50,8 +53,8 @@
             android:text="Edit"
             android:textSize="13sp"
             android:paddingHorizontal="12dp"
-            android:backgroundTint="@color/teal_700"
-            android:textColor="@android:color/white" />
+            android:backgroundTint="?attr/colorSecondary"
+            android:textColor="?attr/colorOnSecondary" />
 
         <!-- 🗑️ Nút Delete -->
         <Button
@@ -62,10 +65,10 @@
             android:textSize="13sp"
             android:layout_marginStart="8dp"
             android:paddingHorizontal="12dp"
-            android:backgroundTint="@color/red_700"
-            android:textColor="@android:color/white" />
+            android:backgroundTint="?attr/colorPrimary"
+            android:textColor="?attr/colorOnPrimary" />
 
-        <!-- ➕ Nút Join (ẩn mặc định) -->
+        <!-- ➕ Nút Join -->
         <Button
             android:id="@+id/btnJoin"
             android:layout_width="wrap_content"
@@ -74,10 +77,8 @@
             android:textSize="13sp"
             android:layout_marginStart="8dp"
             android:paddingHorizontal="12dp"
-            android:backgroundTint="@color/purple_500"
-            android:textColor="@android:color/white"
+            android:backgroundTint="?attr/colorSecondary"
+            android:textColor="?attr/colorOnSecondary"
             android:visibility="gone" />
     </LinearLayout>
-
 </LinearLayout>
-
