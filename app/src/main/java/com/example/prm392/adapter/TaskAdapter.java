@@ -36,6 +36,18 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             "#F57C00", "#0097A7", "#C2185B", "#5D4037"
     };
 
+    public void submitList(List<TaskEntity> show) {
+        if (show == null) {
+            this.tasksList = new ArrayList<>();
+            this.tasksListFiltered = new ArrayList<>();
+        } else {
+            this.tasksList = new ArrayList<>(show);
+            this.tasksListFiltered = new ArrayList<>(show);
+        }
+        notifyDataSetChanged();
+    }
+
+
     public interface OnTaskClickListener {
         void onTaskClick(TaskEntity task);
 

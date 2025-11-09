@@ -13,6 +13,10 @@
         android:id="@+id/nav_project"
         android:title="Project" />
     <item
+        android:id="@+id/nav_my_tasks"
+        android:title="Nhiệm vụ của tôi" />
+
+    <item
         android:id="@+id/nav_settings"
         android:title="Cài đặt" />
     <item
