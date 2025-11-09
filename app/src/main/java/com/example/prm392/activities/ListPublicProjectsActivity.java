@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.R;
-import com.example.prm392.adapter.ProjectAdapter;
+import com.example.prm392.adapter.PublicProjectAdapter;
 import com.example.prm392.data.local.AppDatabase;
 import com.example.prm392.data.local.ProjectDAO;
 import com.example.prm392.models.ProjectEntity;
@@ -27,11 +27,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ListProjectsActivity extends AppCompatActivity {
+public class ListPublicProjectsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private FloatingActionButton fabAdd;
-    private ProjectAdapter adapter;
+    private PublicProjectAdapter adapter;
     private ProjectDAO projectDAO;
 
     private DrawerLayout drawerLayout;
@@ -131,11 +131,11 @@ public class ListProjectsActivity extends AppCompatActivity {
                     Toast.makeText(this, joinMode ? "Chưa có dự án công khai." : "Chưa có dự án nào.", Toast.LENGTH_SHORT).show();
                 }
 
-                adapter = new ProjectAdapter(projects, new ProjectAdapter.OnProjectClickListener() {
+                adapter = new PublicProjectAdapter(projects, new PublicProjectAdapter.OnProjectClickListener() {
                     @Override
                     public void onItemClick(ProjectEntity project) {
                         // Mở chi tiết, hoặc danh sách thành viên dự án
-                        Intent intent = new Intent(ListProjectsActivity.this, ListMembersActivity.class);
+                        Intent intent = new Intent(ListPublicProjectsActivity.this, ListMembersActivity.class);
                         intent.putExtra("projectId", project.projectId);
                         startActivity(intent);
                     }

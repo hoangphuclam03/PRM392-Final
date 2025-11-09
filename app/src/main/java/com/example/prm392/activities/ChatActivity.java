@@ -268,7 +268,7 @@ public class ChatActivity extends AppCompatActivity {
         popupMenu.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_browse_projects) {
                 // Mở danh sách dự án để gửi Join Request
-                Intent it = new Intent(this, ListProjectsActivity.class);
+                Intent it = new Intent(this, ListPublicProjectsActivity.class);
                 it.putExtra("mode", "join"); // gợi ý: để Activity ẩn FAB, chỉ hiển thị public
                 startActivity(it);
                 return true;
