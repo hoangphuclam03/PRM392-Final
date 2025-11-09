@@ -3,7 +3,6 @@ package com.example.prm392.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -18,20 +17,17 @@ import com.example.prm392.adapter.PublicProjectAdapter;
 import com.example.prm392.data.local.AppDatabase;
 import com.example.prm392.data.local.ProjectDAO;
 import com.example.prm392.models.ProjectEntity;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.prm392.utils.FirebaseUtil;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ListPublicProjectsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
-    private FloatingActionButton fabAdd;
     private PublicProjectAdapter adapter;
     private ProjectDAO projectDAO;
 
@@ -44,21 +40,14 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_list_projects);
+        setContentView(R.layout.activity_list_public_project);
 
         // ---------------- ÁNH XẠ VIEW ----------------
         recyclerView = findViewById(R.id.recyclerMembers);
-        fabAdd = findViewById(R.id.fabAddProject);
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        // ẨN FAB NẾU Ở CHẾ ĐỘ JOIN (phải làm sau khi findViewById)
-        String mode = getIntent().getStringExtra("mode");
-        if ("join".equals(mode)) {
-            fabAdd.setVisibility(View.GONE);
-        }
 
         // ---------------- SETUP DRAWER TOGGLE ----------------
         toggle = new ActionBarDrawerToggle(
@@ -70,16 +59,14 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
         );
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
-        toggle.getDrawerArrowDrawable().setColor(getResources().getColor(android.R.color.white));
 
-        // ---------------- INIT ROOM DATABASE ----------------
+        // ---------------- INIT DATABASE ----------------
         projectDAO = AppDatabase.getInstance(this).projectDAO();
 
-        // ---------------- LOAD DỮ LIỆU PROJECT ----------------
+        // ---------------- LOAD PROJECTS ----------------
         loadProjects();
 
-
-        // ---------------- XỬ LÝ MENU BÊN TRÁI ----------------
+        // ---------------- MENU NAVIGATION ----------------
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -94,7 +81,7 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
             } else if (id == R.id.nav_project) {
                 startActivity(new Intent(this, ListYourProjectsActivity.class));
             } else if (id == R.id.nav_my_tasks) {
-                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
+                startActivity(new Intent(this, ListTasksActivity.class));
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
             } else if (id == R.id.nav_calendar) {
@@ -110,33 +97,33 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
         });
     }
 
-    // ---------------- LOAD PROJECTS (duy nhất) ----------------
+    // ---------------- LOAD PROJECTS ----------------
     private void loadProjects() {
-        final boolean joinMode = "join".equals(getIntent().getStringExtra("mode"));
-
         executor.execute(() -> {
-            List<ProjectEntity> projects = joinMode
-                    ? projectDAO.getPublicProjects()
-                    : projectDAO.getAllProjects();
+
+            List<ProjectEntity> projects = projectDAO.getPublicProjects();
 
             runOnUiThread(() -> {
                 if (projects == null || projects.isEmpty()) {
-                    Toast.makeText(this, joinMode ? "Chưa có dự án công khai." : "Chưa có dự án nào.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Chưa có dự án công khai.", Toast.LENGTH_SHORT).show();
                 }
 
                 adapter = new PublicProjectAdapter(projects, new PublicProjectAdapter.OnProjectClickListener() {
+
+                    // ✅ CLICK → MỞ CHAT (ONLY)
                     @Override
                     public void onItemClick(ProjectEntity project) {
-                        // Mở chi tiết, hoặc danh sách thành viên dự án
-                        Intent intent = new Intent(ListPublicProjectsActivity.this, ListMembersActivity.class);
-                        intent.putExtra("projectId", project.projectId);
-                        startActivity(intent);
+
+                        Intent it = new Intent(ListPublicProjectsActivity.this, ChatActivity.class);
+                        it.putExtra("teamId", project.projectId);
+                        it.putExtra("teamName", project.projectName);
+                        startActivity(it);
                     }
 
+                    // ✅ Không dùng nữa → để trống
                     @Override
                     public void onRequestJoinClick(ProjectEntity project) {
-                        // Gửi join request
-                        sendJoinRequest(project);
+                        // BỎ HOÀN TOÀN JOIN
                     }
                 });
 
@@ -146,46 +133,15 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
         });
     }
 
-    private void sendJoinRequest(ProjectEntity project) {
-        String uid = com.example.prm392.utils.FirebaseUtil.currentUserId();
-        if (uid == null) {
-            Toast.makeText(this, "Bạn chưa đăng nhập.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Map<String, Object> req = new HashMap<>();
-        req.put("userId", uid);
-        req.put("projectId", project.projectId);
-        req.put("timestamp", System.currentTimeMillis());
-        req.put("status", "pending");
-
-        com.example.prm392.utils.FirebaseUtil
-                .db
-                .collection("join_requests")
-                .add(req)
-                .addOnSuccessListener(r -> Toast.makeText(this, "Đã gửi yêu cầu tham gia!", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-    }
-
-    // ---------------- REFRESH KHI QUAY LẠI ----------------
     @Override
     protected void onResume() {
         super.onResume();
         loadProjects();
     }
 
-    // ---------------- LOGOUT USER ----------------
-    private void logoutUser() {
-        Toast.makeText(this, "Đã đăng xuất!", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
-    }
-
-    // ---------------- MỞ MENU KHI BẤM NÚT ☰ ----------------
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (toggle.onOptionsItemSelected(item)) {
-            return true;
-        }
+        if (toggle.onOptionsItemSelected(item)) return true;
         return super.onOptionsItemSelected(item);
     }
 }
