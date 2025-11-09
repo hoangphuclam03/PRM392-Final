@@ -4,12 +4,12 @@ import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.prm392.R;
 import com.example.prm392.adapter.MemberSelectAdapter;
 import com.example.prm392.data.local.AppDatabase;
@@ -17,6 +17,8 @@ import com.example.prm392.models.ProjectEntity;
 import com.example.prm392.models.ProjectMemberEntity;
 import com.example.prm392.models.TaskEntity;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -32,8 +34,8 @@ public class CreateTaskActivity extends AppCompatActivity {
     private Button btnCreate, btnCancel;
     private ImageButton btnPickDate;
 
-
     private AppDatabase db;
+    private FirebaseFirestore firestore;
     private List<ProjectEntity> projects = new ArrayList<>();
     private List<ProjectMemberEntity> projectMembers = new ArrayList<>();
     private MemberSelectAdapter memberAdapter;
@@ -47,6 +49,8 @@ public class CreateTaskActivity extends AppCompatActivity {
         setContentView(R.layout.activity_create_task);
 
         db = AppDatabase.getInstance(getApplicationContext());
+        firestore = FirebaseFirestore.getInstance();
+
         bindViews();
         loadProjects();
 
@@ -57,21 +61,21 @@ public class CreateTaskActivity extends AppCompatActivity {
 
     @SuppressLint("WrongViewCast")
     private void bindViews() {
-        spinnerProject   = findViewById(R.id.spinnerProject);
-        etTitle          = findViewById(R.id.etTaskTitle);
-        etDesc           = findViewById(R.id.etTaskDescription);
-        tvDate           = findViewById(R.id.tvSelectedDate);
-        btnPickDate      = findViewById(R.id.btnPickDate);
-        tvSelectedCount  = findViewById(R.id.tvSelectedCount);
-        rvMembers        = findViewById(R.id.rvMembers);
-        rgStatus         = findViewById(R.id.rgStatus);
-        btnCreate        = findViewById(R.id.btnCreateTask);
-        btnCancel        = findViewById(R.id.btnCancel);
+        spinnerProject = findViewById(R.id.spinnerProject);
+        etTitle = findViewById(R.id.etTaskTitle);
+        etDesc = findViewById(R.id.etTaskDescription);
+        tvDate = findViewById(R.id.tvSelectedDate);
+        btnPickDate = findViewById(R.id.btnPickDate);
+        tvSelectedCount = findViewById(R.id.tvSelectedCount);
+        rvMembers = findViewById(R.id.rvMembers);
+        rgStatus = findViewById(R.id.rgStatus);
+        btnCreate = findViewById(R.id.btnCreateTask);
+        btnCancel = findViewById(R.id.btnCancel);
 
         rvMembers.setLayoutManager(new LinearLayoutManager(this));
-        memberAdapter = new MemberSelectAdapter(new ArrayList<>(), ids -> {
-            tvSelectedCount.setText("Đã chọn: " + ids);
-        });
+        memberAdapter = new MemberSelectAdapter(new ArrayList<>(), member ->
+                tvSelectedCount.setText("Đã chọn: " + member.fullName)
+        );
         rvMembers.setAdapter(memberAdapter);
     }
 
@@ -83,12 +87,10 @@ public class CreateTaskActivity extends AppCompatActivity {
         }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    /** 🔹 Load các Project mà user hiện tại là Owner */
     private void loadProjects() {
         AsyncTask.execute(() -> {
-            // Lấy user hiện tại từ Firebase
             String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
-            // ✅ Chỉ load các project mà người này là Owner
             List<ProjectEntity> list = db.projectDAO().getProjectsByOwner(currentUserId);
 
             runOnUiThread(() -> {
@@ -110,16 +112,15 @@ public class CreateTaskActivity extends AppCompatActivity {
 
                 spinnerProject.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
-                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
                         selectedProjectId = projects.get(position).projectId;
-                        loadMembersForProject(selectedProjectId);
+                        syncMembersFromFirestore(selectedProjectId);
                     }
 
                     @Override
                     public void onNothingSelected(AdapterView<?> parent) { }
                 });
 
-                // Nếu có PROJECT_ID truyền sẵn (ví dụ khi click từ ListProject)
                 String forcedId = getIntent().getStringExtra("PROJECT_ID");
                 if (forcedId != null) {
                     int idx = indexOfProject(forcedId);
@@ -128,7 +129,6 @@ public class CreateTaskActivity extends AppCompatActivity {
             });
         });
     }
-
 
     private List<String> toProjectNames(List<ProjectEntity> list) {
         List<String> names = new ArrayList<>();
@@ -143,7 +143,31 @@ public class CreateTaskActivity extends AppCompatActivity {
         return -1;
     }
 
-    private void loadMembersForProject(String projectId) {
+    /** 🔹 Đồng bộ từ Firestore → Room → hiển thị UI */
+    private void syncMembersFromFirestore(String projectId) {
+        tvSelectedCount.setText("Đang tải...");
+        firestore.collection("project_members")
+                .whereEqualTo("projectId", projectId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    AsyncTask.execute(() -> {
+                        if (!snapshot.isEmpty()) {
+                            for (DocumentSnapshot doc : snapshot) {
+                                ProjectMemberEntity m = doc.toObject(ProjectMemberEntity.class);
+                                if (m != null) db.projectMemberDAO().upsert(m);
+                            }
+                        }
+                        runOnUiThread(() -> loadMembersFromRoom(projectId));
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Không tải được danh sách từ Firestore", Toast.LENGTH_SHORT).show();
+                    loadMembersFromRoom(projectId);
+                });
+    }
+
+    /** 🔹 Lấy dữ liệu từ Room */
+    private void loadMembersFromRoom(String projectId) {
         AsyncTask.execute(() -> {
             List<ProjectMemberEntity> members = db.projectMemberDAO().getMembersByProject(projectId);
             runOnUiThread(() -> {
@@ -155,48 +179,63 @@ public class CreateTaskActivity extends AppCompatActivity {
         });
     }
 
+    /** 🔹 Tạo Task */
     private void createTask() {
         String title = etTitle.getText().toString().trim();
-        String desc  = etDesc.getText().toString().trim();
+        String desc = etDesc.getText().toString().trim();
+
         String status;
         int checked = rgStatus.getCheckedRadioButtonId();
         if (checked == R.id.rbInProgress) status = "INPROGRESS";
         else if (checked == R.id.rbInReview) status = "INREVIEW";
-        else {
-            status = "TODO";
+        else status = "TODO";
+
+        if (title.isEmpty()) {
+            etTitle.setError("Nhập tiêu đề");
+            return;
+        }
+        if (selectedProjectId == null) {
+            toast("Chưa chọn project");
+            return;
+        }
+        if (selectedDate.isEmpty()) {
+            toast("Chưa chọn deadline");
+            return;
         }
 
-        if (title.isEmpty()) { etTitle.setError("Nhập tiêu đề"); return; }
-        if (selectedProjectId == null) { toast("Chưa chọn project"); return; }
-        if (selectedDate.isEmpty()) { toast("Chưa chọn deadline"); return; }
+        // ✅ Chỉ chọn 1 người duy nhất
+        ProjectMemberEntity selectedMember = memberAdapter.getSelectedMember();
+        if (selectedMember == null) {
+            toast("Vui lòng chọn 1 thành viên để giao task");
+            return;
+        }
 
-        List<String> selectedUserIds = memberAdapter.getSelectedUserIds();
-        if (selectedUserIds.isEmpty()) { toast("Chọn ít nhất 1 thành viên"); return; }
-
-        // hiện tại TaskEntity có 1 field assignedTo => tạo 1 task/1 assignee
         AsyncTask.execute(() -> {
             long now = System.currentTimeMillis();
-            for (String uid : selectedUserIds) {
-                TaskEntity t = new TaskEntity();
-                t.taskId = "task_" + now + "_" + uid; // tạm thời, nếu cần hãy chuyển sang Firestore ID
-                t.projectId = selectedProjectId;
-                t.assignedTo = uid;
-                t.title = title;
-                t.description = desc;
-                t.status = status;
-                t.dueDate = selectedDate;
-                t.isPendingSync = false;
-                t.pendingSync = false;
-                t.lastSyncedAt = now;
-                db.taskDAO().insertOrUpdate(t);
-            }
+
+            TaskEntity t = new TaskEntity();
+            t.taskId = "task_" + now + "_" + selectedMember.userId;
+            t.projectId = selectedProjectId;
+            t.assignedTo = selectedMember.userId;
+            t.title = title;
+            t.description = desc;
+            t.status = status;
+            t.dueDate = selectedDate;
+            t.isPendingSync = false;
+            t.pendingSync = false;
+            t.lastSyncedAt = now;
+
+            db.taskDAO().insertOrUpdate(t);
+
             runOnUiThread(() -> {
-                toast("Tạo task thành công");
+                toast("Tạo task thành công cho " + selectedMember.fullName);
                 setResult(RESULT_OK);
                 finish();
             });
         });
     }
 
-    private void toast(String m) { Toast.makeText(this, m, Toast.LENGTH_SHORT).show(); }
+    private void toast(String m) {
+        Toast.makeText(this, m, Toast.LENGTH_SHORT).show();
+    }
 }

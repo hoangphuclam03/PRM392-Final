@@ -3,6 +3,7 @@ package com.example.prm392.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -12,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.prm392.R;
 import com.example.prm392.data.local.AppDatabase;
+import com.example.prm392.models.ProjectEntity;
 import com.example.prm392.models.ProjectMemberEntity;
 import com.example.prm392.models.UserEntity;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -30,6 +32,7 @@ public class AddMemberActivity extends AppCompatActivity {
     private String currentUserRole;
 
     private FirebaseFirestore db;
+    private AppDatabase localDb;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -40,6 +43,7 @@ public class AddMemberActivity extends AppCompatActivity {
         edtEmail = findViewById(R.id.edtEmail);
         btnAdd = findViewById(R.id.btnAdd);
         db = FirebaseFirestore.getInstance();
+        localDb = AppDatabase.getInstance(this);
 
         // 🔹 Nhận dữ liệu từ Intent
         projectId = getIntent().getStringExtra("projectId");
@@ -68,59 +72,67 @@ public class AddMemberActivity extends AppCompatActivity {
             return;
         }
 
-        // 🔹 Tìm user theo email trong Firestore
-        db.collection("Users")
-                .whereEqualTo("email", email)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (querySnapshot.isEmpty()) {
-                        Toast.makeText(this, "Không tìm thấy người dùng với email này", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        UserEntity user = doc.toObject(UserEntity.class);
-                        user.userId = doc.getId(); // lấy ID Firestore
-
-                        // 🔹 Tạo ProjectMemberEntity mới
-                        ProjectMemberEntity member = new ProjectMemberEntity();
-                        member.memberId = UUID.randomUUID().toString();
-                        member.projectId = projectId;
-                        member.userId = user.userId;
-                        member.fullName = user.fullName != null ? user.fullName : "(No Name)";
-                        member.role = "Member";
-                        member.pendingSync = false;
-                        member.updatedAt = System.currentTimeMillis();
-
-                        // 🔹 Lưu vào Firestore
-                        db.collection("project_members")
-                                .document(member.memberId)
-                                .set(member)
-                                .addOnSuccessListener(aVoid -> {
-                                    // Lưu luôn vào local Room
-                                    Executors.newSingleThreadExecutor().execute(() -> {
-                                        AppDatabase.getInstance(this)
-                                                .projectMemberDAO()
-                                                .upsert(member);
-                                    });
-
-                                    Toast.makeText(this, "Đã thêm thành viên: " + member.fullName, Toast.LENGTH_SHORT).show();
-
-                                    // Quay lại danh sách thành viên
-                                    Intent intent = new Intent(this, ProjectMembersActivity.class);
-                                    intent.putExtra("projectId", projectId);
-                                    intent.putExtra("projectName", projectName);
-                                    intent.putExtra("role", currentUserRole);
-                                    startActivity(intent);
-                                    finish();
-                                })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(this, "Lỗi khi thêm: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                                );
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Lỗi kết nối Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+        // ✅ Đảm bảo projectId lấy từ local (Room), không phải từ Firestore
+        Executors.newSingleThreadExecutor().execute(() -> {
+            ProjectEntity project = localDb.projectDAO().getProjectById(projectId);
+            if (project == null) {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Không tìm thấy dự án trong local DB", Toast.LENGTH_SHORT).show()
                 );
+                return;
+            }
+
+            String localProjectId = project.projectId; // đây là ID thật trong Room
+            Log.d("DEBUG_ADD_MEMBER", "Thêm member vào projectId = " + localProjectId);
+
+            db.collection("Users")
+                    .whereEqualTo("email", email)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        if (querySnapshot.isEmpty()) {
+                            Toast.makeText(this, "Không tìm thấy người dùng với email này", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        for (QueryDocumentSnapshot doc : querySnapshot) {
+                            UserEntity user = doc.toObject(UserEntity.class);
+                            user.userId = doc.getId();
+
+                            ProjectMemberEntity member = new ProjectMemberEntity();
+                            member.memberId = UUID.randomUUID().toString();
+                            member.projectId = localProjectId; //localProjectID ✅ Quan trọng: dùng ID local
+                            member.userId = user.userId;
+                            member.fullName = user.fullName != null ? user.fullName : "(No Name)";
+                            member.role = "Member";
+                            member.pendingSync = false;
+                            member.updatedAt = System.currentTimeMillis();
+
+                            // 🔹 Lưu vào Firestore
+                            db.collection("project_members")
+                                    .document(member.memberId)
+                                    .set(member)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Executors.newSingleThreadExecutor().execute(() -> {
+                                            localDb.projectMemberDAO().upsert(member);
+                                        });
+
+                                        Toast.makeText(this, "Đã thêm thành viên: " + member.fullName, Toast.LENGTH_SHORT).show();
+
+                                        Intent intent = new Intent(this, ProjectMembersActivity.class);
+                                        intent.putExtra("projectId", localProjectId);
+                                        intent.putExtra("projectName", projectName);
+                                        intent.putExtra("role", currentUserRole);
+                                        startActivity(intent);
+                                        finish();
+                                    })
+                                    .addOnFailureListener(e ->
+                                            Toast.makeText(this, "Lỗi khi thêm: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                    );
+                        }
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Lỗi kết nối Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                    );
+        });
     }
 }
