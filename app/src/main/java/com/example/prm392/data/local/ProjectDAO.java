@@ -1,5 +1,6 @@
 package com.example.prm392.data.local;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -65,10 +66,14 @@ public interface ProjectDAO {
     @Query("SELECT * FROM projects WHERE ownerId = :ownerId")
     List<ProjectEntity> getProjectsByOwner(String ownerId);
 
-    @Query("SELECT * FROM projects WHERE isPublic = 1 AND " +
-            "(projectName LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%') " +
-            "ORDER BY updatedAt DESC")
-    List<ProjectEntity> searchPublicProjects(String query);
+    @Query("""
+SELECT p.*
+FROM projects p
+JOIN project_members m ON p.projectId = m.projectId
+WHERE m.userId = :uid
+ORDER BY p.updatedAt DESC
+""")
+    LiveData<List<ProjectEntity>> getJoinedProjectsLive(String uid);
 
     @Delete
     void delete(ProjectEntity project);

@@ -54,6 +54,11 @@ public interface ProjectMemberDAO {
     void deleteByProject(String projectId);
 
 
+    @Query("SELECT EXISTS(SELECT 1 FROM project_members WHERE projectId = :projectId AND userId = :uid)")
+    boolean isJoined(String projectId, String uid);
+
+
+
     // ✅ UP SERT chính thức (teamListActivity cần)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(ProjectMemberEntity member);

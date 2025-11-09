@@ -113,7 +113,7 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         teamNameText.setText(isDraft
-                ? "Tin nhắn (chưa chọn team)"
+                ? "Tin nhắn (Chưa chọn Prject)"
                 : (incomingName != null ? incomingName : "Team"));
 
         adapter = new ChatRecyclerAdapter(this, true);
