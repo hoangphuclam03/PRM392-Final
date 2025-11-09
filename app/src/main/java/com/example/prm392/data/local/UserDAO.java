@@ -38,4 +38,8 @@ public interface UserDAO {
     void deleteUser(String userId);
     @Query("DELETE FROM users")
     void clearAll();
+    @Query("SELECT * FROM users ORDER BY lastLogin DESC LIMIT 1")
+    UserEntity getLastLoggedInUser();
+
+
 }

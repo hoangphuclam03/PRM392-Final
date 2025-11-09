@@ -2,6 +2,8 @@
     <string name="app_name">PRM392</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="hint_email_member">Nhập email thành viên</string>
+    <string name="btn_add_member">Thêm thành viên</string>
 
     <!-- Settings Activity -->
     <string name="title_settings">Settings</string>

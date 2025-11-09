@@ -1,6 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="Theme.PRM392" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- ✅ Dark theme colors -->
         <item name="colorPrimary">@color/md_theme_dark_primary</item>
         <item name="colorOnPrimary">@color/md_theme_dark_onPrimary</item>
         <item name="colorSecondary">@color/md_theme_dark_secondary</item>
@@ -8,5 +10,12 @@
         <item name="colorSurface">@color/md_theme_dark_surface</item>
         <item name="colorOnSurface">@color/md_theme_dark_onSurface</item>
         <item name="android:windowBackground">@color/md_theme_dark_background</item>
+
+        <!-- ✅ Bổ sung đồng bộ -->
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+
+        <!-- ✅ Tắt chữ đen trên thanh status bar -->
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

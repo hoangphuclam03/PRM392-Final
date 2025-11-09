@@ -41,10 +41,13 @@
             android:exported="false" />
         <activity
             android:name=".activities.AddMemberActivity"
-            android:exported="false" />
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+
         <activity
             android:name=".activities.SettingsActivity"
             android:exported="false" />
+
 
         <activity
             android:name=".activities.ListYourProjectsActivity"
@@ -67,9 +70,8 @@
         </service>
 
 
-        <activity
-            android:name=".activities.RemoveMemberActivity"
-            android:exported="false" />
+        <activity android:name=".activities.ProjectMembersActivity" />
+
         <activity
             android:name=".activities.ListPublicProjectsActivity"
             android:exported="false" />
