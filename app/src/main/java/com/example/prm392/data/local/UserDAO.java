@@ -22,6 +22,9 @@ public interface UserDAO {
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     UserEntity getUserByEmail(String email);
 
+    @Query("DELETE FROM users WHERE userId NOT IN (:ids)")
+    void deleteUsersNotIn(List<String> ids);
+
     @Query("SELECT * FROM users ORDER BY lastLogin DESC")
     List<UserEntity> getAllUsers();
 

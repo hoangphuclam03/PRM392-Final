@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -216,20 +217,36 @@ public class SyncRepository {
                     try {
                         UserDAO userDAO = localDb.userDAO();
 
+                        // 1️⃣ Get all current local users
+                        List<UserEntity> localUsers = userDAO.getAll();
+
+                        // 2️⃣ Build list of Firestore userIds
+                        List<String> firestoreIds = new ArrayList<>();
                         for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            firestoreIds.add(doc.getId());
+
+                            // Convert Firestore doc → UserEntity
                             UserEntity user = new UserEntity();
                             user.userId = doc.getId();
                             user.fullName = doc.getString("fullName");
                             user.email = doc.getString("email");
                             user.avatarUrl = doc.getString("avatarUrl");
-                            user.password = ""; // never sync password from Firebase
+                            user.password = ""; // never sync password
                             Long lastLogin = doc.getLong("lastLogin");
                             user.lastLogin = lastLogin != null ? lastLogin : 0L;
 
                             userDAO.insertOrUpdate(user);
                         }
 
-                        Log.d("SyncRepo", "✅ Synced " + snapshot.size() + " users from Firestore → Room");
+                        // 3️⃣ Delete local users not found in Firestore
+                        for (UserEntity localUser : localUsers) {
+                            if (!firestoreIds.contains(localUser.userId)) {
+                                userDAO.deleteUser(localUser.userId);
+                                Log.d("SyncRepo", "🗑 Deleted local user not in Firestore: " + localUser.userId);
+                            }
+                        }
+
+                        Log.d("SyncRepo", "✅ Synced " + snapshot.size() + " users from Firestore → Room (with cleanup)");
                     } catch (Exception e) {
                         Log.e("SyncRepo", "❌ Error syncing users from Firestore", e);
                     }
@@ -238,6 +255,7 @@ public class SyncRepository {
                         Log.e("SyncRepo", "❌ Fetch Firestore users failed", e)
                 );
     }
+
 
     // =============================================================
     // 🔄 HARD REFRESH — luôn kéo dữ liệu mới nhất từ Firestore về Room
