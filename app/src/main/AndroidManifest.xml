@@ -15,26 +15,23 @@
         android:theme="@style/Theme.PRM392">
         <activity android:name=".activities.ListTasksActivity" android:exported="false" />
 
+        <activity
+            android:name=".activities.GlobalSearchActivity"
+            android:exported="false" />
         <!-- 🔹 Activity mặc định (launcher) -->
         <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- 🔹 Trang Home chính sau khi đăng nhập -->
+        </activity> <!-- 🔹 Trang Home chính sau khi đăng nhập -->
         <activity
             android:name=".activities.HomeActivity"
-            android:exported="true" />
-
-
-
-        <!-- 🔹 Các màn chức năng chính -->
+            android:exported="true" /> <!-- 🔹 Các màn chức năng chính -->
         <activity android:name=".activities.UserProfileActivity" />
-
         <activity
             android:name=".activities.ChatActivity"
             android:exported="false" />
@@ -47,7 +44,6 @@
         <activity
             android:name=".activities.SettingsActivity"
             android:exported="false" />
-
         <activity
             android:name=".activities.ListYourProjectsActivity"
             android:exported="false" />
@@ -70,9 +66,7 @@
 
         <activity
             android:name=".activities.RegisterActivity"
-            android:exported="false" />
-
-        <!-- 🔹 Firebase Service -->
+            android:exported="false" /> <!-- 🔹 Firebase Service -->
         <service
             android:name=".FCMNotificationService"
             android:exported="false">
@@ -86,7 +80,6 @@
         <activity
             android:name=".activities.ListPublicProjectsActivity"
             android:exported="false" />
-
     </application>
 
 </manifest>
