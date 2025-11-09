@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prm392.R;
+import com.example.prm392.models.ProjectMemberEntity;
 import com.example.prm392.models.UserEntity;
 
 import java.util.ArrayList;
@@ -27,6 +28,9 @@ public class MemberSelectAdapter extends RecyclerView.Adapter<MemberSelectAdapte
             "#1976D2", "#388E3C", "#D32F2F", "#7B1FA2",
             "#F57C00", "#0097A7", "#C2185B", "#5D4037"
     };
+
+    public void submitList(List<ProjectMemberEntity> members) {
+    }
 
     public interface OnSelectionChangedListener {
         void onSelectionChanged(int count);

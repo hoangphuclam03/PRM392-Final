@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -12,27 +13,25 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
+        <activity android:name=".activities.ListTasksActivity" android:exported="false" />
 
+        <activity
+            android:name=".activities.GlobalSearchActivity"
+            android:exported="false" />
         <!-- 🔹 Activity mặc định (launcher) -->
         <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- 🔹 Trang Home chính sau khi đăng nhập -->
+        </activity> <!-- 🔹 Trang Home chính sau khi đăng nhập -->
         <activity
             android:name=".activities.HomeActivity"
-            android:exported="true" />
-
-
-
-        <!-- 🔹 Các màn chức năng chính -->
+            android:exported="true" /> <!-- 🔹 Các màn chức năng chính -->
         <activity android:name=".activities.UserProfileActivity" />
-
         <activity
             android:name=".activities.ChatActivity"
             android:exported="false" />
@@ -47,8 +46,6 @@
         <activity
             android:name=".activities.SettingsActivity"
             android:exported="false" />
-
-
         <activity
             android:name=".activities.ListYourProjectsActivity"
             android:exported="false" />
@@ -57,10 +54,21 @@
             android:exported="false" />
         <activity android:name=".activities.EditProjectActivity" />
         <activity
-            android:name=".activities.RegisterActivity"
+            android:name=".activities.CreateTaskActivity"
             android:exported="false" />
 
-        <!-- 🔹 Firebase Service -->
+
+        <activity
+            android:name=".activities.ListTasksActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.KanbanBoardActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.RegisterActivity"
+            android:exported="false" /> <!-- 🔹 Firebase Service -->
         <service
             android:name=".FCMNotificationService"
             android:exported="false">
@@ -75,7 +83,6 @@
         <activity
             android:name=".activities.ListPublicProjectsActivity"
             android:exported="false" />
-
     </application>
 
 </manifest>

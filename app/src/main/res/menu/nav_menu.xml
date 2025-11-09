@@ -1,26 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 🔍 Global Search (Top Item) -->
+    <item
+        android:id="@+id/nav_global_search"
+        android:title="Tìm kiếm toàn hệ thống"
+        android:icon="@android:drawable/ic_menu_search"
+        android:orderInCategory="1" />
+
     <item
         android:id="@+id/nav_home"
-        android:title="Trang chủ" />
+        android:title="Trang chủ"
+        android:icon="@android:drawable/ic_menu_view"
+        android:orderInCategory="2" />
+
     <item
         android:id="@+id/nav_profile"
-        android:title="Hồ sơ cá nhân" />
+        android:title="Hồ sơ cá nhân"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:orderInCategory="3" />
+
     <item
         android:id="@+id/nav_chat"
-        android:title="Chat" />
+        android:title="Chat"
+        android:icon="@android:drawable/ic_menu_send"
+        android:orderInCategory="4" />
+
     <item
         android:id="@+id/nav_project"
-        android:title="Project" />
+        android:title="Project"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:orderInCategory="5" />
+
+    <item
+        android:id="@+id/nav_my_tasks"
+        android:title="Task"
+        android:orderInCategory="6" />
+
     <item
         android:id="@+id/nav_settings"
-        android:title="Cài đặt" />
-    <item
-        android:id="@+id/nav_logout"
-        android:title="Đăng xuất" />
+        android:title="Cài đặt"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:orderInCategory="7" />
+
     <item
         android:id="@+id/nav_calendar"
-        android:title="Lịch" />
+        android:title="Lịch"
+        android:icon="@android:drawable/ic_menu_today"
+        android:orderInCategory="8" />
 
+    <item
+        android:id="@+id/nav_logout"
+        android:title="Đăng xuất"
+        android:icon="@android:drawable/ic_lock_power_off"
+        android:orderInCategory="9" />
 
 </menu>

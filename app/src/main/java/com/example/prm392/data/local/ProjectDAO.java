@@ -62,6 +62,9 @@ public interface ProjectDAO {
     @Query("SELECT * FROM projects WHERE isPublic = 1 ORDER BY updatedAt DESC")
     List<ProjectEntity> getPublicProjects();
 
+    @Query("SELECT * FROM projects WHERE ownerId = :ownerId")
+    List<ProjectEntity> getProjectsByOwner(String ownerId);
+
     @Query("SELECT * FROM projects WHERE isPublic = 1 AND " +
             "(projectName LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%') " +
             "ORDER BY updatedAt DESC")

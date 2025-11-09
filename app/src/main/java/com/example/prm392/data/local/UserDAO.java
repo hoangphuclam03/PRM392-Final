@@ -17,6 +17,8 @@ public interface UserDAO {
     @Query("SELECT * FROM users ORDER BY fullName ASC")
     List<UserEntity> getAll();
 
+    @Query("SELECT * FROM users WHERE fullName LIKE '%' || :query || '%' OR email LIKE '%' || :query || '%' ORDER BY fullName ASC")
+    List<UserEntity> searchUsers(String query);
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     UserEntity getUserByEmail(String email);
 
