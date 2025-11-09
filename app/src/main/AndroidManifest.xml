@@ -46,9 +46,6 @@
             android:name=".activities.SettingsActivity"
             android:exported="false" />
 
-        <!-- 🔹 Màn quản lý Projects -->
-            android:name=".activities.ChatActivity"
-            android:exported="false" />
         <activity
             android:name=".activities.ListYourProjectsActivity"
             android:exported="false" />
@@ -69,14 +66,9 @@
             </intent-filter>
         </service>
 
-        <activity
-            android:name=".activities.AddMemberActivity"
-            android:exported="false" />
+
         <activity
             android:name=".activities.RemoveMemberActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.SettingsActivity"
             android:exported="false" />
         <activity
             android:name=".activities.ListPublicProjectsActivity"

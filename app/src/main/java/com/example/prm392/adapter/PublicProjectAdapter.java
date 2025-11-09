@@ -50,7 +50,7 @@ public class PublicProjectAdapter extends RecyclerView.Adapter<PublicProjectAdap
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_project, parent, false);
+                .inflate(R.layout.item_public_project, parent, false);
         return new ViewHolder(v);
     }
 

@@ -22,7 +22,6 @@ public interface ProjectDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertOrUpdate(ProjectEntity project);
 
-    @Query("SELECT * FROM projects ORDER BY updatedAt DESC")
     @Update
     void update(ProjectEntity project);
 
@@ -38,9 +37,6 @@ public interface ProjectDAO {
     @Query("SELECT * FROM projects ORDER BY localId DESC")
     List<ProjectEntity> getAllProjects();
 
-    @Query("DELETE FROM projects WHERE projectId = :id")
-    void deleteById(String id);
-
     @Query("SELECT * FROM projects WHERE projectId IN (:projectIds)")
     List<ProjectEntity> getProjectsByIds(List<String> projectIds);
 
@@ -52,8 +48,6 @@ public interface ProjectDAO {
     @Query("SELECT * FROM projects WHERE projectName LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'")
     List<ProjectEntity> searchProjects(String query);
 
-    @Query("DELETE FROM projects")
-    void clearAll();
 
     @Query("UPDATE projects SET pendingSync = 0, lastSyncedAt = :timestamp WHERE projectId = :projectId")
     void markSynced(String projectId, long timestamp);

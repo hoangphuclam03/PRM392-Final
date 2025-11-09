@@ -14,9 +14,9 @@ import java.util.List;
 public interface ProjectMemberDAO {
 
     // ✅ Lấy tất cả member trong 1 project
-    @Query("SELECT * FROM project_members WHERE projectId = :projectId")
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertOrUpdate(ProjectMemberEntity member);
+    void insertOrUpdate(ProjectMemberEntity memberId);
 
     @Query("SELECT * FROM project_members WHERE projectId = :projectId ORDER BY fullName ASC")
     List<ProjectMemberEntity> getMembersByProject(String projectId);

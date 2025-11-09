@@ -46,7 +46,7 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_list_projects);
 
         // ---------------- ÁNH XẠ VIEW ----------------
-        recyclerView = findViewById(R.id.recyclerProjects);
+        recyclerView = findViewById(R.id.recyclerMembers);
         fabAdd = findViewById(R.id.fabAddProject);
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
@@ -77,10 +77,6 @@ public class ListPublicProjectsActivity extends AppCompatActivity {
         // ---------------- LOAD DỮ LIỆU PROJECT ----------------
         loadProjects();
 
-        fabAdd.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreateManagingProjectActivity.class);
-            startActivity(intent);
-        });
 
         // ---------------- XỬ LÝ MENU BÊN TRÁI ----------------
         navigationView.setNavigationItemSelectedListener(item -> {
