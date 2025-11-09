@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -12,6 +13,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PRM392">
+        <activity android:name=".activities.ListTasksActivity" android:exported="false" />
+
         <activity
             android:name=".activities.GlobalSearchActivity"
             android:exported="false" />
@@ -49,6 +52,19 @@
             android:exported="false" />
         <activity android:name=".activities.EditProjectActivity" />
         <activity
+            android:name=".activities.CreateTaskActivity"
+            android:exported="false" />
+
+
+        <activity
+            android:name=".activities.ListTasksActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.KanbanBoardActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activities.RegisterActivity"
             android:exported="false" /> <!-- 🔹 Firebase Service -->
         <service
@@ -58,6 +74,8 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+
 
         <activity
             android:name=".activities.ListPublicProjectsActivity"

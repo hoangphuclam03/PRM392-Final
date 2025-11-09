@@ -12,6 +12,7 @@ import java.util.List;
 
 @Dao
 public interface TaskDAO {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertOrUpdate(TaskEntity task);
 
@@ -36,14 +37,13 @@ public interface TaskDAO {
     @Query("SELECT * FROM tasks ORDER BY dueDate DESC")
     List<TaskEntity> getAllTasks();
 
-    @Query("UPDATE tasks SET pendingSync = 0, lastSyncedAt = :timestamp WHERE taskId = :taskId")
+    @Query("UPDATE tasks SET isPendingSync = 0, lastSyncedAt = :timestamp WHERE taskId = :taskId")
     void markSynced(String taskId, long timestamp);
-    @Query("""
-SELECT * FROM tasks
-WHERE projectId = :projectId
-  AND assignedTo = :userId
-  AND dueDate BETWEEN :start AND :end
-""")
+
+    @Query("SELECT * FROM tasks " +
+            "WHERE projectId = :projectId " +
+            "AND assignedTo = :userId " +
+            "AND dueDate BETWEEN :start AND :end")
     List<TaskEntity> getMyProjectTasksBetweenDates(
             String projectId,
             String userId,
@@ -53,6 +53,7 @@ WHERE projectId = :projectId
 
     @Delete
     void delete(TaskEntity task);
+
     @Query("DELETE FROM tasks")
     void clearAll();
 }

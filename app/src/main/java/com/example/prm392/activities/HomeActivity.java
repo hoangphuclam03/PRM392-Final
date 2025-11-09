@@ -157,6 +157,12 @@ public class HomeActivity extends AppCompatActivity {
             else if (id == R.id.nav_project) {
                 startActivity(new Intent(HomeActivity.this, ListYourProjectsActivity.class));
             }
+            else if (id == R.id.nav_my_tasks) {
+                Intent intent = new Intent(HomeActivity.this, ListTasksActivity.class);
+                startActivity(intent);
+            }
+
+
             else if (id == R.id.nav_settings) {
                 startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
             }
