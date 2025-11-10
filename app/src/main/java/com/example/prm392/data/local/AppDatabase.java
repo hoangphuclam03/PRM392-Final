@@ -1,6 +1,7 @@
 package com.example.prm392.data.local;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.room.Database;
@@ -8,6 +9,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
+import com.example.prm392.data.repository.SyncRepository;
 import com.example.prm392.models.CalendarEvent;
 import com.example.prm392.models.ChatEntity;
 import com.example.prm392.models.NotificationEntity;
@@ -29,17 +31,15 @@ import java.util.concurrent.Executors;
                 TaskEntity.class,
                 UserEntity.class
         },
-        version = 8, // ⬅ incremented version to fix schema mismatch
-        exportSchema = true
+        version = 2, // ✅ Reset version — new schema baseline
+        exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
 
     // ======= DAO bindings =======
     public abstract ProjectDAO projectDAO();
-
     public abstract ProjectMemberDAO projectMemberDAO();
     public abstract TaskDAO taskDAO();
-
     public abstract UserDAO userDAO();
     public abstract ChatDAO chatDAO();
     public abstract NotificationDAO notificationDAO();
@@ -70,25 +70,29 @@ public abstract class AppDatabase extends RoomDatabase {
                         AppDatabase.class,
                         "team_manager_db"
                 )
-                // Keep migrations for production use
-                .addMigrations(
-                        MigrationManager.MIGRATION_1_2,
-                        MigrationManager.MIGRATION_2_3,
-                        MigrationManager.MIGRATION_3_4
-                )
-                // Developer safe mode — rebuilds DB on mismatch
+                // 🔹 Always drop & recreate database if schema mismatches
                 .fallbackToDestructiveMigration()
-                // Room will open DB asynchronously to avoid main-thread blocking
+                // 🔹 Async background operations
                 .setQueryExecutor(databaseWriteExecutor)
                 .setTransactionExecutor(databaseWriteExecutor)
                 .addCallback(new Callback() {
                     @Override
+                    public void onCreate(@NonNull SupportSQLiteDatabase db) {
+                        super.onCreate(db);
+                        databaseWriteExecutor.execute(() -> {
+                            try {
+                                Log.d("AppDatabase", "🆕 Room created — syncing from Firestore...");
+                                new com.example.prm392.data.repository.SyncRepository(context).syncAll();
+                            } catch (Exception e) {
+                                Log.e("AppDatabase", "❌ Auto Firestore sync failed: " + e.getMessage(), e);
+                            }
+                        });
+                    }
+
+                    @Override
                     public void onOpen(@NonNull SupportSQLiteDatabase db) {
                         super.onOpen(db);
-                        // Optional: run lightweight checks/logs
-                        databaseWriteExecutor.execute(() -> {
-                            // Example: preload small lookup data if needed
-                        });
+                        // Optional lightweight check or refresh
                     }
                 })
                 .build();

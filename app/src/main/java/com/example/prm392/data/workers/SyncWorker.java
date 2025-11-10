@@ -29,10 +29,7 @@ public class SyncWorker extends Worker {
         }
 
         Log.d("SyncWorker", "🌐 Online — performing background sync...");
-        syncRepo.syncProjectsFromFirestore();
-        syncRepo.syncProjectsToFirestore();
-        syncRepo.syncTasksFromFirestore();
-        syncRepo.syncTasksToFirestore();
+        syncRepo.syncAll();
         return Result.success();
     }
 
