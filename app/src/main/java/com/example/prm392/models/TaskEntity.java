@@ -18,4 +18,5 @@ public class TaskEntity {
     public boolean isPendingSync; // true = waiting to sync
     public boolean pendingSync = false;
     public long lastSyncedAt = 0;
+    public long updatedAt = System.currentTimeMillis();  // last time this record changed
 }

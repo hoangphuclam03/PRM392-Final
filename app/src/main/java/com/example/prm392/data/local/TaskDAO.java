@@ -14,7 +14,16 @@ import java.util.List;
 public interface TaskDAO {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertOrUpdate(TaskEntity task);
+    default void insertOrUpdate(TaskEntity task) {
+        // Automatically bump updatedAt whenever the record changes
+        task.updatedAt = System.currentTimeMillis();
+        task.pendingSync = true;
+        insertInternal(task);
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertInternal(TaskEntity task);
+
 
     @Query("SELECT * FROM tasks WHERE projectId = :projectId ORDER BY dueDate ASC")
     List<TaskEntity> getTasksByProject(String projectId);

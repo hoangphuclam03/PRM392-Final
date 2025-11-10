@@ -28,7 +28,7 @@ public class ProjectMemberEntity {
     public String role;        // e.g. "Manager", "Member"
 
     public boolean pendingSync = false;
-
+    public long lastSyncedAt = 0;
     // timestamp for conflict resolution
     public long updatedAt = System.currentTimeMillis();
 }

@@ -31,7 +31,7 @@ import java.util.concurrent.Executors;
                 TaskEntity.class,
                 UserEntity.class
         },
-        version = 2, // ✅ Reset version — new schema baseline
+        version = 3, // ✅ Reset version — new schema baseline
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {

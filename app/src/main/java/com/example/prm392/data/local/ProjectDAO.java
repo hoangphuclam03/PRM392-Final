@@ -19,10 +19,14 @@ public interface ProjectDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(ProjectEntity project);
 
-    // ✅ Hàm cũ vẫn giữ nguyên
+    default void insertOrUpdate(ProjectEntity project) {
+        // Automatically update timestamp + pending flag
+        project.updatedAt = System.currentTimeMillis();
+        project.pendingSync = true;
+        insertProject(project);
+    }
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertOrUpdate(ProjectEntity project);
-
+    void insertProject(ProjectEntity project);
     @Update
     void update(ProjectEntity project);
 

@@ -16,7 +16,14 @@ public interface ProjectMemberDAO {
     // ✅ Lấy tất cả member trong 1 project
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertOrUpdate(ProjectMemberEntity memberId);
+    default void insertOrUpdate(ProjectMemberEntity member) {
+        member.updatedAt = System.currentTimeMillis();
+        member.pendingSync = true;
+        insertInternal(member);
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertInternal(ProjectMemberEntity member);
 
     @Query("SELECT * FROM project_members WHERE projectId = :projectId ORDER BY fullName ASC")
     List<ProjectMemberEntity> getMembersByProject(String projectId);
