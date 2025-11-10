@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#F5F5F5">
+    android:background="@color/md_theme_light_background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -32,15 +32,15 @@
                     android:text="Tạo Task Mới"
                     android:textSize="24sp"
                     android:textStyle="bold"
-                    android:textColor="#1976D2"/>
+                    android:textColor="@color/md_theme_light_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Điền thông tin và phân công thành viên"
                     android:textSize="14sp"
-                    android:textColor="#666666"
-                    android:layout_marginTop="4dp"/>
+                    android:textColor="@color/md_theme_light_onSurface"
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -64,7 +64,7 @@
                     android:text="Thông tin Task"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="#333333"
+                    android:textColor="@color/md_theme_light_onSurface"
                     android:layout_marginBottom="16dp"/>
 
                 <!-- Project Spinner -->
@@ -73,7 +73,7 @@
                     android:layout_height="wrap_content"
                     android:text="Chọn Project"
                     android:textSize="14sp"
-                    android:textColor="#666666"
+                    android:textColor="@color/md_theme_light_onSurface"
                     android:layout_marginBottom="4dp"/>
 
                 <Spinner
@@ -90,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:text="Tiêu đề Task *"
                     android:textSize="14sp"
-                    android:textColor="#666666"
+                    android:textColor="@color/md_theme_light_onSurface"
                     android:layout_marginBottom="4dp"/>
 
                 <EditText
@@ -102,6 +102,8 @@
                     android:background="@android:drawable/edit_text"
                     android:inputType="text"
                     android:maxLines="1"
+                    android:textColor="@color/md_theme_light_onSurface"
+                    android:textColorHint="@color/md_theme_light_onSecondary"
                     android:layout_marginBottom="16dp"/>
 
                 <!-- Description Input -->
@@ -110,7 +112,7 @@
                     android:layout_height="wrap_content"
                     android:text="Mô tả"
                     android:textSize="14sp"
-                    android:textColor="#666666"
+                    android:textColor="@color/md_theme_light_onSurface"
                     android:layout_marginBottom="4dp"/>
 
                 <EditText
@@ -122,6 +124,8 @@
                     android:background="@android:drawable/edit_text"
                     android:inputType="textMultiLine"
                     android:gravity="top|start"
+                    android:textColor="@color/md_theme_light_onSurface"
+                    android:textColorHint="@color/md_theme_light_onSecondary"
                     android:layout_marginBottom="16dp"/>
 
                 <!-- Due Date Picker -->
@@ -130,7 +134,7 @@
                     android:layout_height="wrap_content"
                     android:text="Ngày hết hạn *"
                     android:textSize="14sp"
-                    android:textColor="#666666"
+                    android:textColor="@color/md_theme_light_onSurface"
                     android:layout_marginBottom="4dp"/>
 
                 <LinearLayout
@@ -146,7 +150,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Chọn ngày..."
-                        android:textColor="#999999"
+                        android:textColor="@color/md_theme_light_onSecondary"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"/>
 
@@ -156,7 +160,8 @@
                         android:layout_height="match_parent"
                         android:background="?attr/selectableItemBackground"
                         android:src="@android:drawable/ic_menu_my_calendar"
-                        android:contentDescription="Pick Date"/>
+                        android:contentDescription="Pick Date"
+                        app:tint="@color/md_theme_light_secondary" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -189,7 +194,7 @@
                         android:text="Phân công thành viên"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="#333333"/>
+                        android:textColor="@color/md_theme_light_onSurface"/>
 
                     <TextView
                         android:id="@+id/tvSelectedCount"
@@ -197,8 +202,8 @@
                         android:layout_height="wrap_content"
                         android:text="0 người"
                         android:textSize="14sp"
-                        android:textColor="#1976D2"
-                        android:background="#E3F2FD"
+                        android:textColor="@color/md_theme_light_primary"
+                        android:background="@color/md_theme_light_secondary"
                         android:padding="6dp"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"/>
@@ -234,7 +239,7 @@
                     android:text="Trạng thái ban đầu"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="#333333"
+                    android:textColor="@color/md_theme_light_onSurface"
                     android:layout_marginBottom="12dp"/>
 
                 <RadioGroup
@@ -249,6 +254,7 @@
                         android:layout_height="wrap_content"
                         android:text="📋 To Do"
                         android:textSize="16sp"
+                        android:textColor="@color/md_theme_light_onSurface"
                         android:checked="true"
                         android:padding="8dp"/>
 
@@ -258,6 +264,7 @@
                         android:layout_height="wrap_content"
                         android:text="⚡ In Progress"
                         android:textSize="16sp"
+                        android:textColor="@color/md_theme_light_onSurface"
                         android:padding="8dp"/>
 
                     <RadioButton
@@ -266,6 +273,7 @@
                         android:layout_height="wrap_content"
                         android:text="👀 In Review"
                         android:textSize="16sp"
+                        android:textColor="@color/md_theme_light_onSurface"
                         android:padding="8dp"/>
                 </RadioGroup>
             </LinearLayout>
@@ -287,8 +295,8 @@
                 android:layout_weight="1"
                 android:text="Hủy"
                 android:textSize="16sp"
-                android:backgroundTint="#E0E0E0"
-                android:textColor="#333333"
+                android:backgroundTint="@color/md_theme_light_secondary"
+                android:textColor="@color/md_theme_light_onSecondary"
                 android:layout_marginEnd="8dp"/>
 
             <Button
@@ -298,8 +306,8 @@
                 android:layout_weight="1"
                 android:text="Tạo Task"
                 android:textSize="16sp"
-                android:backgroundTint="#1976D2"
-                android:textColor="#FFFFFF"
+                android:backgroundTint="@color/md_theme_light_primary"
+                android:textColor="@color/md_theme_light_onPrimary"
                 android:layout_marginStart="8dp"/>
         </LinearLayout>
     </LinearLayout>

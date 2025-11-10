@@ -59,10 +59,12 @@ public class ListYourProjectsActivity extends AppCompatActivity {
         setupNavigation();
 
         recyclerView = findViewById(R.id.recyclerViewProjects);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+
         fabAdd = findViewById(R.id.fabAddProject);
         db = AppDatabase.getInstance(this);
         syncRepo = new SyncRepository(this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         fabAdd.setOnClickListener(v -> startActivity(new Intent(this, CreateProjectActivity.class)));
 
@@ -82,9 +84,9 @@ public class ListYourProjectsActivity extends AppCompatActivity {
             } else if (id == R.id.nav_chat) {
                 startActivity(new Intent(this, ChatActivity.class));
             } else if (id == R.id.nav_project) {
-                startActivity(new Intent(this, ListYourProjectsActivity.class));
+                // Đang ở màn này rồi, chỉ đóng drawer
             } else if (id == R.id.nav_my_tasks) {
-                startActivity(new Intent(this, ListTasksActivity.class)); // adjust name if different
+                startActivity(new Intent(this, ListTasksActivity.class));
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
             } else if (id == R.id.nav_calendar) {
@@ -104,9 +106,11 @@ public class ListYourProjectsActivity extends AppCompatActivity {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             UserEntity currentUser = db.userDAO().getLastLoggedInUser();
             if (currentUser == null || currentUser.userId == null) {
-                runOnUiThread(() -> Toast.makeText(this,
+                runOnUiThread(() -> Toast.makeText(
+                        this,
                         "Không tìm thấy người dùng hiện tại. Vui lòng đăng nhập lại.",
-                        Toast.LENGTH_LONG).show());
+                        Toast.LENGTH_LONG
+                ).show());
                 return;
             }
 
@@ -118,13 +122,21 @@ public class ListYourProjectsActivity extends AppCompatActivity {
     private void refreshAndLoadProjects() {
         if (currentUserId == null) return;
 
+        // Đồng bộ từ Firestore về trước, rồi đọc từ Room
+        syncRepo.refreshProjectsFromFirestore();
+
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            syncRepo.refreshProjectsFromFirestore();
             try {
-                Thread.sleep(1500);
-            } catch (InterruptedException ignored) {
-            }
-            List<ProjectEntity> projects = db.projectDAO().getAll(); // ✅ hiện tất cả project
+                // Cho Firestore callback có thời gian ghi về Room (đơn giản, đủ dùng)
+                Thread.sleep(1200);
+            } catch (InterruptedException ignored) {}
+
+            // Mặc định: lấy tất cả project
+            List<ProjectEntity> projects = db.projectDAO().getAll();
+
+            // 👉 Nếu bạn đã có DAO chỉ lấy project user đã tham gia, đổi thành:
+            // List<ProjectEntity> projects = db.projectDAO().getAllForUser(currentUserId);
+
             runOnUiThread(() -> displayProjects(projects));
         });
     }
@@ -133,28 +145,29 @@ public class ListYourProjectsActivity extends AppCompatActivity {
         if (projects == null || projects.isEmpty()) {
             Toast.makeText(this, "Chưa có project nào", Toast.LENGTH_SHORT).show();
             recyclerView.setAdapter(null);
-        } else {
-            adapter = new ProjectAdapter(
-                    projects,
-                    currentUserId,
-                    project -> { // click vào item
-                        Intent intent = new Intent(this, ProjectMembersActivity.class);
-                        intent.putExtra("projectId", project.projectId);
-                        intent.putExtra("projectName", project.projectName);
-                        intent.putExtra("isPublic", project.isPublic);
-                        startActivity(intent);
-                    },
-                    project -> { // edit
-                        Intent intent = new Intent(this, EditProjectActivity.class);
-                        intent.putExtra("projectId", project.projectId);
-                        startActivity(intent);
-                    },
-                    this::deleteProject,
-                    this::joinPublicProject // ✅ truyền đúng số lượng (6 tham số)
-            );
-
-            recyclerView.setAdapter(adapter);
+            return;
         }
+
+        adapter = new ProjectAdapter(
+                projects,
+                currentUserId,
+                project -> { // click item → mở danh sách thành viên
+                    Intent intent = new Intent(this, ProjectMembersActivity.class);
+                    intent.putExtra("projectId", project.projectId);
+                    intent.putExtra("projectName", project.projectName);
+                    intent.putExtra("isPublic", project.isPublic);
+                    startActivity(intent);
+                },
+                project -> { // edit project
+                    Intent intent = new Intent(this, EditProjectActivity.class);
+                    intent.putExtra("projectId", project.projectId);
+                    startActivity(intent);
+                },
+                this::deleteProject,
+                this::joinPublicProject
+        );
+
+        recyclerView.setAdapter(adapter);
     }
 
     private void deleteProject(ProjectEntity project) {
@@ -164,9 +177,14 @@ public class ListYourProjectsActivity extends AppCompatActivity {
                 .setPositiveButton("Xoá", (dialog, which) -> {
                     AppDatabase.databaseWriteExecutor.execute(() -> {
                         try {
+                            // Xoá trên Firestore + Room (đã có trong SyncRepository)
                             syncRepo.deleteProjectAndMembers(project.projectId);
+
+                            // Phần local này là “thắt chặt” — nếu đã xoá ở SyncRepository rồi
+                            // thì 2 dòng dưới có thể trở thành no-op (không sao)
                             db.projectDAO().delete(project);
                             db.projectMemberDAO().deleteByProject(project.projectId);
+
                             runOnUiThread(() -> {
                                 Toast.makeText(this, "Đã xoá project", Toast.LENGTH_SHORT).show();
                                 refreshAndLoadProjects();
@@ -187,13 +205,15 @@ public class ListYourProjectsActivity extends AppCompatActivity {
                     .getMemberByProjectAndUser(project.projectId, currentUserId);
 
             if (existing != null) {
-                runOnUiThread(() -> Toast.makeText(this, "Bạn đã là thành viên của project này", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Bạn đã là thành viên của project này", Toast.LENGTH_SHORT).show());
                 return;
             }
 
             UserEntity user = db.userDAO().getLastLoggedInUser();
             if (user == null) {
-                runOnUiThread(() -> Toast.makeText(this, "Không xác định user", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Không xác định user", Toast.LENGTH_SHORT).show());
                 return;
             }
 
@@ -208,8 +228,9 @@ public class ListYourProjectsActivity extends AppCompatActivity {
             db.projectMemberDAO().insertOrUpdate(newMember);
             new SyncRepository(this).syncMembersToFirestore();
 
-            runOnUiThread(() -> Toast.makeText(this,
-                    "Đã tham gia project " + project.projectName, Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(
+                    this, "Đã tham gia project " + project.projectName, Toast.LENGTH_SHORT
+            ).show());
         });
     }
 

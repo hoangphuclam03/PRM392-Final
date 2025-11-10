@@ -17,13 +17,17 @@ public interface ChatDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertOrUpdate(ChatEntity chat);
 
+
+
     // ✅ DÙNG CHO GỬI TIN: cần rowId để update lại đúng bản ghi
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(ChatEntity chat);
 
     // ✅ Cập nhật trạng thái đã đồng bộ đúng 1 dòng (tránh tạo bản ghi mới)
     @Query("UPDATE chats SET chatId = :chatId, isPendingSync = 0 WHERE localId = :localId")
     void markSynced(int localId, String chatId);
+    @Query("UPDATE chats SET chatId = :chatId, isPendingSync = 0 WHERE messageId = :messageId")
+    void markUploaded(String messageId, String chatId);
 
     @Query("SELECT * FROM chats WHERE projectId = :projectId ORDER BY timestamp ASC")
     List<ChatEntity> getByProject(String projectId);
