@@ -18,7 +18,9 @@ import com.example.prm392.models.ChatEntity;
 import com.example.prm392.utils.FirebaseUtil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ChatRecyclerAdapter extends RecyclerView.Adapter<ChatRecyclerAdapter.ChatVH> {
 
@@ -26,6 +28,9 @@ public class ChatRecyclerAdapter extends RecyclerView.Adapter<ChatRecyclerAdapte
     private final List<ChatEntity> data = new ArrayList<>();
     private final boolean isGroup;
     private String myUid; // KHÔNG final: login có thể thay đổi
+
+    // Cache map: senderId -> fullName để không query Firestore nhiều lần
+    private final Map<String, String> nameCache = new HashMap<>();
 
     public ChatRecyclerAdapter(@NonNull Context ctx, boolean isGroup) {
         this.isGroup = isGroup;
@@ -145,6 +150,7 @@ public class ChatRecyclerAdapter extends RecyclerView.Adapter<ChatRecyclerAdapte
             if (h.rightSender != null) {
                 if (isGroup) {
                     h.rightSender.setVisibility(View.VISIBLE);
+                    // nếu muốn cũng có thể hiện fullName của mình, tạm để "Bạn"
                     h.rightSender.setText("Bạn");
                 } else h.rightSender.setVisibility(View.GONE);
             }
@@ -156,7 +162,46 @@ public class ChatRecyclerAdapter extends RecyclerView.Adapter<ChatRecyclerAdapte
             if (h.leftSender != null) {
                 if (isGroup) {
                     h.leftSender.setVisibility(View.VISIBLE);
-                    h.leftSender.setText(c.senderId); // TODO: map -> display name
+
+                    String senderId = c.senderId;
+                    if (TextUtils.isEmpty(senderId)) {
+                        h.leftSender.setText("Ẩn danh");
+                    } else {
+                        // 1. Nếu đã có cache tên -> dùng luôn
+                        String cached = nameCache.get(senderId);
+                        if (cached != null) {
+                            h.leftSender.setText(cached);
+                        } else {
+                            // 2. Chưa có: tạm hiện UID, rồi query Firestore để lấy fullName
+                            h.leftSender.setText(senderId);
+
+                            FirebaseUtil.userRef(senderId).get()
+                                    .addOnSuccessListener(doc -> {
+                                        if (doc == null || !doc.exists()) return;
+
+                                        // ĐỔI "fullName" thành đúng tên field bạn lưu trong Firestore
+                                        String fullName = doc.getString("fullName");
+                                        if (TextUtils.isEmpty(fullName)) {
+                                            fullName = senderId;
+                                        }
+
+                                        nameCache.put(senderId, fullName);
+
+                                        int adapterPos = h.getAdapterPosition();
+                                        if (adapterPos != RecyclerView.NO_POSITION
+                                                && adapterPos < data.size()) {
+                                            ChatEntity current = data.get(adapterPos);
+                                            if (senderId.equals(current.senderId)) {
+                                                h.leftSender.setText(fullName);
+                                            }
+                                        }
+                                    })
+                                    .addOnFailureListener(e ->
+                                            Log.e(TAG, "load sender name fail", e)
+                                    );
+                        }
+                    }
+
                 } else h.leftSender.setVisibility(View.GONE);
             }
         }

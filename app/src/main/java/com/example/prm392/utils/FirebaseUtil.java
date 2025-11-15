@@ -79,6 +79,13 @@ public class FirebaseUtil {
     public static DocumentReference chatroomRef(String chatroomId) { return allChatroomsCollection().document(chatroomId); }
     public static CollectionReference chatroomMessagesRef(String chatroomId) { return chatroomRef(chatroomId).collection("chats"); }
 
+    public static com.google.firebase.firestore.DocumentReference userRef(String uid) {
+        return com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("Users")    // đúng tên collection user của bạn
+                .document(uid);
+    }
+
+
     public static String getChatroomId(String userId1, String userId2) {
         return (userId1.hashCode() < userId2.hashCode())
                 ? userId1 + "_" + userId2
