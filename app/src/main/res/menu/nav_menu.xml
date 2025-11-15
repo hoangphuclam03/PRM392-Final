@@ -35,24 +35,25 @@
     <item
         android:id="@+id/nav_my_tasks"
         android:title="Task"
-        android:orderInCategory="6" />
+        android:icon="@drawable/ic_task_logo"
+        android:orderInCategory="5"/>
 
     <item
         android:id="@+id/nav_settings"
         android:title="Cài đặt"
         android:icon="@android:drawable/ic_menu_preferences"
-        android:orderInCategory="7" />
+        android:orderInCategory="6" />
 
     <item
         android:id="@+id/nav_calendar"
         android:title="Lịch"
         android:icon="@android:drawable/ic_menu_today"
-        android:orderInCategory="8" />
+        android:orderInCategory="7" />
 
     <item
         android:id="@+id/nav_logout"
         android:title="Đăng xuất"
         android:icon="@android:drawable/ic_lock_power_off"
-        android:orderInCategory="9" />
+        android:orderInCategory="8" />
 
 </menu>

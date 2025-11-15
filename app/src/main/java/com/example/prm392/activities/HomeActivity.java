@@ -48,11 +48,13 @@ public class HomeActivity extends AppCompatActivity {
 
     private SyncRepository syncRepository;
 
+    // SharedPreferences keys
     private static final String PREFS_NAME = "app_settings";
     private static final String KEY_DARK_THEME = "dark_theme";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // ---------------- Apply saved dark theme BEFORE super.onCreate ----------------
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean darkTheme = prefs.getBoolean(KEY_DARK_THEME, false);
         AppCompatDelegate.setDefaultNightMode(
@@ -62,12 +64,15 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        // ---------------- Initialize Firebase ----------------
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
+        // ---------------- Setup UI ----------------
         initUI();
         setupNavigation();
 
+        // ---------------- Handle user session ----------------
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             loadUserInfo(user.getUid());
@@ -79,15 +84,23 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
+        // ---------------- Logout ----------------
         btnLogout.setOnClickListener(v -> logoutUser());
 
+        // ---------------- Run heavy initialization asynchronously ----------------
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
+                // Room initialization (lazy loading)
                 AppDatabase.getInstance(getApplicationContext());
                 syncRepository = new SyncRepository(getApplicationContext());
+
+                // Initial sync (Room ↔ Firestore)
                 syncRepository.syncAll();
+
+                // Schedule background sync
                 schedulePeriodicSync();
                 Log.d("HOME", "Initial and periodic sync scheduled successfully.");
+
             } catch (Exception e) {
                 Log.e("HOME", "Background init failed: " + e.getMessage());
             }
@@ -103,11 +116,13 @@ public class HomeActivity extends AppCompatActivity {
         int currentMode = getResources().getConfiguration().uiMode &
                 android.content.res.Configuration.UI_MODE_NIGHT_MASK;
 
+        // Refresh activity if theme changed
         if ((darkTheme && currentMode != android.content.res.Configuration.UI_MODE_NIGHT_YES) ||
                 (!darkTheme && currentMode == android.content.res.Configuration.UI_MODE_NIGHT_YES)) {
             recreate();
         }
 
+        // Trigger a lightweight sync when user returns
         if (syncRepository != null) {
             Executors.newSingleThreadExecutor().execute(() -> {
                 try {
@@ -119,6 +134,7 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    // ---------------- UI Initialization ----------------
     private void initUI() {
         tvWelcome = findViewById(R.id.tvWelcome);
         btnLogout = findViewById(R.id.btnLogout);
@@ -134,38 +150,40 @@ public class HomeActivity extends AppCompatActivity {
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
+        // ✅ Hiển thị trạng thái menu hiện tại là “Trang chủ”
         navigationView.setCheckedItem(R.id.nav_home);
-
-        // ✅ Make global search non-checkable so it doesn’t stay highlighted
-        navigationView.getMenu().findItem(R.id.nav_global_search).setCheckable(false);
     }
 
+    // ---------------- Navigation Setup ----------------
     private void setupNavigation() {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.nav_global_search) {
-                startActivity(new Intent(this, GlobalSearchActivity.class));
-            } else if (id == R.id.nav_home) {
+            if (id == R.id.nav_home) {
                 recreate();
             }
+            // ✅ Mở Hồ sơ cá nhân (UserProfileActivity)
             else if (id == R.id.nav_profile) {
-                startActivity(new Intent(this, UserProfileActivity.class));
+                Intent intent = new Intent(HomeActivity.this, UserProfileActivity.class);
+                startActivity(intent);
             }
             else if (id == R.id.nav_chat) {
-                startActivity(new Intent(this, ChatActivity.class));
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class));
             }
             else if (id == R.id.nav_project) {
-                startActivity(new Intent(this, ListYourProjectsActivity.class));
+                startActivity(new Intent(HomeActivity.this, ListYourProjectsActivity.class));
             }
             else if (id == R.id.nav_my_tasks) {
-                startActivity(new Intent(this, ListTasksActivity.class)); // 🔹 adjust activity name if different
+                Intent intent = new Intent(HomeActivity.this, ListTasksActivity.class);
+                startActivity(intent);
             }
+
+
             else if (id == R.id.nav_settings) {
-                startActivity(new Intent(this, SettingsActivity.class));
+                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
             }
             else if (id == R.id.nav_calendar) {
-                startActivity(new Intent(this, CalendarEventsActivity.class));
+                startActivity(new Intent(HomeActivity.this, CalendarEventsActivity.class));
             }
             else if (id == R.id.nav_logout) {
                 logoutUser();
@@ -176,10 +194,12 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
+    // ---------------- Load user info ----------------
     private void loadUserInfo(String uid) {
         DocumentReference ref = db.collection("Users").document(uid);
         ref.get().addOnSuccessListener(document -> {
             if (document.exists()) {
+                // 🔹 Ưu tiên dùng fullName nếu đã có (đồng bộ với RegisterActivity mới)
                 String fullName = document.getString("fullName");
                 String firstName = document.getString("firstName");
                 String lastName = document.getString("lastName");
@@ -202,6 +222,7 @@ public class HomeActivity extends AppCompatActivity {
         );
     }
 
+    // ---------------- Update last login timestamp ----------------
     private void updateLastLogin(String uid) {
         Map<String, Object> update = new HashMap<>();
         update.put("lastLogin", System.currentTimeMillis());
@@ -213,6 +234,7 @@ public class HomeActivity extends AppCompatActivity {
                 );
     }
 
+    // ---------------- Periodic background sync setup ----------------
     private void schedulePeriodicSync() {
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -227,6 +249,7 @@ public class HomeActivity extends AppCompatActivity {
         WorkManager.getInstance(getApplicationContext()).enqueue(syncWorkRequest);
     }
 
+    // ---------------- Logout ----------------
     private void logoutUser() {
         mAuth.signOut();
         startActivity(new Intent(this, MainActivity.class));
